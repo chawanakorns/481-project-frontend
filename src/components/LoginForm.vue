@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import axios from 'axios';
-import { useRouter } from 'vue-router'; // For navigation after successful login
+import { ref } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router' // For navigation after successful login
 
-const username = ref('');
-const password = ref('');
-const msg = 'Login to Your Account'; // Customizable message
-const errorMsg = ref(''); // To show error message if login fails
+const username = ref('')
+const password = ref('')
+const msg = 'Login to Your Account' // Customizable message
+const errorMsg = ref('') // To show error message if login fails
 
-const router = useRouter(); // To handle routing after successful login
+const router = useRouter() // To handle routing after successful login
 
 const handleSubmit = async () => {
   try {
     const response = await axios.post('http://localhost:5000/login', {
       username: username.value,
-      password: password.value
-    });
-    alert(response.data.message); // Display success message
-    router.push('/home'); // Redirect to the home page after successful login
+      password: password.value,
+    })
+    alert(response.data.message) // Display success message
+    router.push('/home') // Redirect to the home page after successful login
   } catch (error) {
     if (error.response) {
-      errorMsg.value = error.response.data.message; // Set error message from backend
+      errorMsg.value = error.response.data.message // Set error message from backend
     } else {
-      errorMsg.value = 'An unexpected error occurred.'; // Fallback error message
+      errorMsg.value = 'An unexpected error occurred.' // Fallback error message
     }
   }
-};
+}
 </script>
 
 <template>

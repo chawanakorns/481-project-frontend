@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import axios from 'axios';
+import { ref } from 'vue'
+import axios from 'axios'
 
-const username = ref('');
-const password = ref('');
-const msg = 'Register for an Account'; // You can customize this message
+const username = ref('')
+const password = ref('')
+const msg = 'Register for an Account' // You can customize this message
 
 const handleSubmit = async () => {
   try {
     const response = await axios.post('http://localhost:5000/register', {
       username: username.value,
-      password: password.value
-    });
-    alert(response.data.message); // Display success message
+      password: password.value,
+    })
+    alert(response.data.message) // Display success message
   } catch (error) {
-    alert(error.response.data.message); // Display error message
+    alert(error.response.data.message) // Display error message
   }
-};
+}
 </script>
 
 <template>
