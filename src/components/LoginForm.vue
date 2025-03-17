@@ -10,10 +10,10 @@ defineProps<{
       <div class="container">
         <h1 class="green">{{ msg }}</h1>
         <label><b>Username</b></label>
-        <input>
+        <input />
 
         <label><b>Password</b></label>
-        <input>
+        <input />
 
         <button type="submit"><router-link to="/home">Login</router-link></button>
 
@@ -26,7 +26,6 @@ defineProps<{
   </div>
 </template>
 
-
 <style scoped>
 h1 {
   font-weight: 500;
@@ -38,5 +37,4 @@ h1 {
 h3 {
   font-size: 1.2rem;
 }
-
 </style>

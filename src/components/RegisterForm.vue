@@ -1,22 +1,37 @@
 <script setup lang="ts">
-defineProps<{
-  msg: string
-}>()
+import { ref } from 'vue';
+import axios from 'axios';
+
+const username = ref('');
+const password = ref('');
+const msg = 'Register for an Account'; // You can customize this message
+
+const handleSubmit = async () => {
+  try {
+    const response = await axios.post('http://localhost:5000/register', {
+      username: username.value,
+      password: password.value
+    });
+    alert(response.data.message); // Display success message
+  } catch (error) {
+    alert(error.response.data.message); // Display error message
+  }
+};
 </script>
 
 <template>
   <div class="register">
-    <form action="" method="post">
+    <form @submit.prevent="handleSubmit">
       <div class="container">
         <h1 class="green">{{ msg }}</h1>
 
         <label><b>Username</b></label>
-        <input>
+        <input v-model="username" type="text" required />
 
         <label><b>Password</b></label>
-        <input>
+        <input v-model="password" type="password" required />
 
-        <button type="submit"><router-link to="/login">Sign Up</router-link></button>
+        <button type="submit">Sign Up</button>
 
         <div>
           <label>Already have an account?</label>
@@ -26,7 +41,6 @@ defineProps<{
     </form>
   </div>
 </template>
-
 
 <style scoped>
 h1 {
@@ -39,5 +53,4 @@ h1 {
 h3 {
   font-size: 1.2rem;
 }
-
 </style>
