@@ -1,21 +1,49 @@
 <script setup lang="ts">
-defineProps<{
-  msg: string
-}>()
+import { ref } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router'; // For navigation after successful login
+
+const username = ref('');
+const password = ref('');
+const msg = 'Login to Your Account'; // Customizable message
+const errorMsg = ref(''); // To show error message if login fails
+
+const router = useRouter(); // To handle routing after successful login
+
+const handleSubmit = async () => {
+  try {
+    const response = await axios.post('http://localhost:5000/login', {
+      username: username.value,
+      password: password.value
+    });
+    alert(response.data.message); // Display success message
+    router.push('/home'); // Redirect to the home page after successful login
+  } catch (error) {
+    if (error.response) {
+      errorMsg.value = error.response.data.message; // Set error message from backend
+    } else {
+      errorMsg.value = 'An unexpected error occurred.'; // Fallback error message
+    }
+  }
+};
 </script>
 
 <template>
   <div class="login">
-    <form action="" method="post">
+    <form @submit.prevent="handleSubmit">
       <div class="container">
         <h1 class="green">{{ msg }}</h1>
+
+        <!-- Display error message if any -->
+        <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+
         <label><b>Username</b></label>
-        <input />
+        <input v-model="username" type="text" required />
 
         <label><b>Password</b></label>
-        <input />
+        <input v-model="password" type="password" required />
 
-        <button type="submit"><router-link to="/home">Login</router-link></button>
+        <button type="submit">Login</button>
 
         <div>
           <label>Don't have an account?</label>
@@ -36,5 +64,11 @@ h1 {
 
 h3 {
   font-size: 1.2rem;
+}
+
+.error {
+  color: red;
+  font-size: 1rem;
+  margin-top: 10px;
 }
 </style>
