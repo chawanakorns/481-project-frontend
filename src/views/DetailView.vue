@@ -13,15 +13,17 @@ const imageLoadError = ref<{ [key: string]: boolean }>({})
 const folders = ref<any[]>([])
 const selectedFolderId = ref<number | null>(null)
 const rating = ref<number>(1)
-const userId = ref(1) // Simulated, replace with actual user ID from auth
+const userId = ref(1) // Replace with actual auth logic
+const feedbackMessage = ref<string>('') // Added for feedback
 
 const fetchRecipe = async () => {
   if (!localRecipe.value) {
     try {
       const response = await axios.get(`http://localhost:5000/recipes/${props.id}`)
       localRecipe.value = response.data
+      feedbackMessage.value = ''
     } catch (error) {
-      console.error('Error fetching recipe:', error)
+      feedbackMessage.value = 'Failed to fetch recipe details.'
     }
   }
 }
@@ -31,14 +33,15 @@ const fetchFolders = async () => {
     const response = await axios.get(`http://localhost:5000/folders?user_id=${userId.value}`)
     folders.value = response.data
     if (folders.value.length > 0) selectedFolderId.value = folders.value[0].FolderId
+    else feedbackMessage.value = 'No folders found. Create one in the Bookmarks page.'
   } catch (error) {
-    console.error('Error fetching folders:', error)
+    feedbackMessage.value = 'Failed to fetch folders.'
   }
 }
 
 const bookmarkRecipe = async () => {
   if (!selectedFolderId.value || !rating.value) {
-    alert('Please select a folder and rating')
+    feedbackMessage.value = 'Please select a folder and provide a rating (1-5).'
     return
   }
   try {
@@ -48,16 +51,15 @@ const bookmarkRecipe = async () => {
       recipe_id: localRecipe.value.RecipeId,
       rating: rating.value,
     })
-    alert('Recipe bookmarked successfully!')
+    feedbackMessage.value = 'Recipe bookmarked successfully!'
   } catch (error) {
-    console.error('Error bookmarking recipe:', error)
-    alert('Failed to bookmark recipe')
+    feedbackMessage.value = 'Failed to bookmark recipe.'
   }
 }
 
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
-  if (localRecipe.value && localRecipe.value.all_image_urls && localRecipe.value.all_image_urls.length > 1) {
+  if (localRecipe.value?.all_image_urls?.length > 1) {
     const currentIndex = localRecipe.value.all_image_urls.indexOf(localRecipe.value.image_url)
     if (currentIndex < localRecipe.value.all_image_urls.length - 1) {
       localRecipe.value.image_url = localRecipe.value.all_image_urls[currentIndex + 1]
@@ -78,6 +80,9 @@ onMounted(() => {
     <div class="back-button">
       <router-link to="/home" class="back-link">← Back to Home</router-link>
     </div>
+    <p v-if="feedbackMessage" :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'">
+      {{ feedbackMessage }}
+    </p>
 
     <div class="recipe-detail" v-if="localRecipe">
       <div class="recipe-header">
@@ -110,7 +115,7 @@ onMounted(() => {
             <ul>
               <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')" :key="index">
                 {{ localRecipe.RecipeIngredientQuantities ? localRecipe.RecipeIngredientQuantities.split(',')[index] +
-                  '' : '' }}{{ ingredient }}
+                  ' ' : '' }}{{ ingredient }}
               </li>
             </ul>
           </div>
@@ -173,6 +178,18 @@ onMounted(() => {
 
 .back-link:hover {
   color: #0056b3;
+}
+
+.success-message {
+  color: #28a745;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .recipe-header {

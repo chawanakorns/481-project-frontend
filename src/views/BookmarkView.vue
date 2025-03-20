@@ -1,22 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 
-const userId = ref(1) // Simulated, replace with actual user ID from auth
+const userId = ref(1) // Replace with actual auth logic
 const folders = ref<any[]>([])
 const newFolderName = ref('')
 const editingFolderId = ref<number | null>(null)
 const editedFolderName = ref('')
 const bookmarks = ref<{ [key: number]: any[] }>({})
+const errorMessage = ref<string>('')
 
 const fetchFolders = async () => {
   try {
     const response = await axios.get(`http://localhost:5000/folders?user_id=${userId.value}`)
     folders.value = response.data
     await fetchBookmarksForFolders()
+    errorMessage.value = ''
   } catch (error) {
-    console.error('Error fetching folders:', error)
+    errorMessage.value = 'Failed to fetch folders. Please try again.'
   }
 }
 
@@ -24,25 +26,30 @@ const fetchBookmarksForFolders = async () => {
   for (const folder of folders.value) {
     try {
       const response = await axios.get(`http://localhost:5000/bookmarks/${folder.FolderId}`)
-      bookmarks.value[folder.FolderId] = response.data
+      bookmarks.value = { ...bookmarks.value, [folder.FolderId]: response.data } // Ensure reactivity
+      errorMessage.value = ''
     } catch (error) {
-      console.error(`Error fetching bookmarks for folder ${folder.FolderId}:`, error)
+      errorMessage.value = `Failed to fetch bookmarks for folder ${folder.Name}.`
     }
   }
 }
 
 const createFolder = async () => {
-  if (newFolderName.value.trim()) {
-    try {
-      const response = await axios.post('http://localhost:5000/folders', {
-        user_id: userId.value,
-        name: newFolderName.value.trim(),
-      })
-      folders.value.push({ FolderId: response.data.folder_id, UserId: userId.value, Name: newFolderName.value.trim() })
-      newFolderName.value = ''
-    } catch (error) {
-      console.error('Error creating folder:', error)
-    }
+  if (!newFolderName.value.trim()) {
+    errorMessage.value = 'Folder name cannot be empty.'
+    return
+  }
+  try {
+    const response = await axios.post('http://localhost:5000/folders', {
+      user_id: userId.value,
+      name: newFolderName.value.trim(),
+    })
+    folders.value.push({ FolderId: response.data.folder_id, UserId: userId.value, Name: newFolderName.value.trim() })
+    newFolderName.value = ''
+    await fetchBookmarksForFolders()
+    errorMessage.value = ''
+  } catch (error) {
+    errorMessage.value = 'Failed to create folder.'
   }
 }
 
@@ -52,15 +59,18 @@ const startEditing = (folder: any) => {
 }
 
 const saveEdit = async (folderId: number) => {
-  if (editedFolderName.value.trim()) {
-    try {
-      await axios.put(`http://localhost:5000/folders/${folderId}`, { name: editedFolderName.value.trim() })
-      const folder = folders.value.find((f) => f.FolderId === folderId)
-      if (folder) folder.Name = editedFolderName.value.trim()
-      editingFolderId.value = null
-    } catch (error) {
-      console.error('Error updating folder:', error)
-    }
+  if (!editedFolderName.value.trim()) {
+    errorMessage.value = 'Folder name cannot be empty.'
+    return
+  }
+  try {
+    await axios.put(`http://localhost:5000/folders/${folderId}`, { name: editedFolderName.value.trim() })
+    const folder = folders.value.find((f) => f.FolderId === folderId)
+    if (folder) folder.Name = editedFolderName.value.trim()
+    editingFolderId.value = null
+    errorMessage.value = ''
+  } catch (error) {
+    errorMessage.value = 'Failed to update folder.'
   }
 }
 
@@ -73,13 +83,15 @@ const deleteFolder = async (folderId: number) => {
   try {
     await axios.delete(`http://localhost:5000/folders/${folderId}`)
     folders.value = folders.value.filter((f) => f.FolderId !== folderId)
-    delete bookmarks.value[folderId]
+    delete bookmarks.value[folderId] // Remove bookmarks from local state
+    errorMessage.value = ''
   } catch (error) {
-    console.error('Error deleting folder:', error)
+    errorMessage.value = 'Failed to delete folder and its bookmarks.'
   }
 }
 
 onMounted(fetchFolders)
+onActivated(fetchBookmarksForFolders)
 </script>
 
 <template>
@@ -87,6 +99,7 @@ onMounted(fetchFolders)
 
   <div class="container">
     <h1 class="page-title">My Bookmarks</h1>
+    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
     <div class="create-folder">
       <input v-model="newFolderName" type="text" placeholder="New folder name" class="folder-input"
@@ -102,7 +115,7 @@ onMounted(fetchFolders)
           <button @click="cancelEdit" class="cancel-button">Cancel</button>
         </div>
         <div v-else class="folder-content">
-          <h3 class="folder-name">{{ folder.Name }}</h3>
+          <h3 class="folder-name">{{ folder.Name }} ({{ bookmarks[folder.FolderId]?.length || 0 }} items)</h3>
           <div class="folder-actions">
             <button @click="startEditing(folder)" class="edit-button">Edit</button>
             <button @click="deleteFolder(folder.FolderId)" class="delete-button">Delete</button>
@@ -143,6 +156,12 @@ onMounted(fetchFolders)
   color: #333;
   text-align: center;
   margin-bottom: 30px;
+}
+
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .create-folder {
@@ -304,7 +323,7 @@ onMounted(fetchFolders)
 }
 
 .bookmark-name {
-  font-size: 16px;
+  font-size: Ascending;
   font-weight: 500;
   margin: 0;
 }
