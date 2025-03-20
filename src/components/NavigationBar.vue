@@ -3,6 +3,7 @@
     <ul class="topnav">
       <div style="display: flex; flex-direction: row">
         <li><a href="/home">Home</a></li>
+        <li><a href="/bookmarks">Bookmarks</a></li>
       </div>
       <div>
         <button><a>Profile</a></button>
@@ -59,6 +60,7 @@
 }
 
 @media screen and (max-width: 600px) {
+
   .topnav a,
   .topnav input[type='text'] {
     float: none;

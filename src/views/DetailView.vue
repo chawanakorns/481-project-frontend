@@ -10,25 +10,51 @@ const props = defineProps<{
 
 const localRecipe = ref<any>(props.recipe)
 const imageLoadError = ref<{ [key: string]: boolean }>({})
+const folders = ref<any[]>([])
+const selectedFolderId = ref<number | null>(null)
+const rating = ref<number>(1)
+const userId = ref(1) // Simulated, replace with actual user ID from auth
 
-// Fetch recipe if not provided via props
 const fetchRecipe = async () => {
-  console.log('fetchRecipe called, localRecipe:', localRecipe.value, 'props.recipe:', props.recipe, 'props.id:', props.id)
   if (!localRecipe.value) {
     try {
-      console.log('Fetching recipe from backend for ID:', props.id)
       const response = await axios.get(`http://localhost:5000/recipes/${props.id}`)
       localRecipe.value = response.data
-      console.log('Recipe fetched:', localRecipe.value)
     } catch (error) {
       console.error('Error fetching recipe:', error)
     }
-  } else {
-    console.log('Recipe already available via props, no fetch needed')
   }
 }
 
-// Handle image load error
+const fetchFolders = async () => {
+  try {
+    const response = await axios.get(`http://localhost:5000/folders?user_id=${userId.value}`)
+    folders.value = response.data
+    if (folders.value.length > 0) selectedFolderId.value = folders.value[0].FolderId
+  } catch (error) {
+    console.error('Error fetching folders:', error)
+  }
+}
+
+const bookmarkRecipe = async () => {
+  if (!selectedFolderId.value || !rating.value) {
+    alert('Please select a folder and rating')
+    return
+  }
+  try {
+    await axios.post('http://localhost:5000/bookmarks', {
+      user_id: userId.value,
+      folder_id: selectedFolderId.value,
+      recipe_id: localRecipe.value.RecipeId,
+      rating: rating.value,
+    })
+    alert('Recipe bookmarked successfully!')
+  } catch (error) {
+    console.error('Error bookmarking recipe:', error)
+    alert('Failed to bookmark recipe')
+  }
+}
+
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
   if (localRecipe.value && localRecipe.value.all_image_urls && localRecipe.value.all_image_urls.length > 1) {
@@ -40,8 +66,8 @@ const handleImageError = (recipeId: number) => {
 }
 
 onMounted(() => {
-  console.log('DetailView mounted')
   fetchRecipe()
+  fetchFolders()
 })
 </script>
 
@@ -102,6 +128,17 @@ onMounted(() => {
             <p v-if="localRecipe.CarbohydrateContent">Carbs: {{ localRecipe.CarbohydrateContent }} g</p>
             <p v-if="localRecipe.SugarContent">Sugar: {{ localRecipe.SugarContent }} g</p>
             <p v-if="localRecipe.FiberContent">Fiber: {{ localRecipe.FiberContent }} g</p>
+          </div>
+
+          <div class="info-card bookmark-section">
+            <h2>Bookmark</h2>
+            <select v-model="selectedFolderId" class="folder-select">
+              <option v-for="folder in folders" :value="folder.FolderId" :key="folder.FolderId">
+                {{ folder.Name }}
+              </option>
+            </select>
+            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
+            <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
           </div>
         </div>
       </div>
@@ -224,6 +261,42 @@ onMounted(() => {
   font-size: 16px;
   color: #666;
   line-height: 1.6;
+}
+
+.bookmark-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.folder-select {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.rating-input {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100px;
+}
+
+.bookmark-button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.bookmark-button:hover {
+  background-color: #218838;
 }
 
 .loading {

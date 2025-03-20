@@ -3,6 +3,7 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import HomeView from '@/views/HomeView.vue'
 import DetailView from '@/views/DetailView.vue'
+import BookmarkView from '@/views/BookmarkView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,6 +41,11 @@ const router = createRouter({
         id: route.params.id,
         recipe: route.params.recipe,
       }),
+    },
+    {
+      path: '/bookmarks',
+      name: 'bookmarks',
+      component: BookmarkView,
     },
   ],
 })
