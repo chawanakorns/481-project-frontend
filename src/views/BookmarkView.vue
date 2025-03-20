@@ -11,26 +11,18 @@ const editedFolderName = ref('')
 const bookmarks = ref<{ [key: number]: any[] }>({})
 const errorMessage = ref<string>('')
 
-const fetchFolders = async () => {
+const fetchFoldersAndBookmarks = async () => {
   try {
-    const response = await axios.get(`http://localhost:5000/folders?user_id=${userId.value}`)
-    folders.value = response.data
-    await fetchBookmarksForFolders()
+    // Fetch folders
+    const foldersResponse = await axios.get(`http://localhost:5000/folders?user_id=${userId.value}`)
+    folders.value = foldersResponse.data
+
+    // Fetch all bookmarks in one request
+    const bookmarksResponse = await axios.get(`http://localhost:5000/bookmarks/all?user_id=${userId.value}`)
+    bookmarks.value = bookmarksResponse.data
     errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to fetch folders. Please try again.'
-  }
-}
-
-const fetchBookmarksForFolders = async () => {
-  for (const folder of folders.value) {
-    try {
-      const response = await axios.get(`http://localhost:5000/bookmarks/${folder.FolderId}`)
-      bookmarks.value = { ...bookmarks.value, [folder.FolderId]: response.data }
-      errorMessage.value = ''
-    } catch (error) {
-      errorMessage.value = `Failed to fetch bookmarks for folder ${folder.Name}.`
-    }
+    errorMessage.value = 'Failed to fetch folders or bookmarks. Please try again.'
   }
 }
 
@@ -46,7 +38,7 @@ const createFolder = async () => {
     })
     folders.value.push({ FolderId: response.data.folder_id, UserId: userId.value, Name: newFolderName.value.trim() })
     newFolderName.value = ''
-    await fetchBookmarksForFolders()
+    await fetchFoldersAndBookmarks() // Refresh bookmarks
     errorMessage.value = ''
   } catch (error) {
     errorMessage.value = 'Failed to create folder.'
@@ -129,8 +121,8 @@ const onDragOver = (event: DragEvent) => {
   event.preventDefault() // Allow drop
 }
 
-onMounted(fetchFolders)
-onActivated(fetchBookmarksForFolders)
+onMounted(fetchFoldersAndBookmarks)
+onActivated(fetchFoldersAndBookmarks)
 </script>
 
 <template>
@@ -239,7 +231,7 @@ onActivated(fetchBookmarksForFolders)
 
 .folder-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(400px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
@@ -359,7 +351,6 @@ onActivated(fetchBookmarksForFolders)
   background: #f9f9f9;
   border-radius: 4px;
   cursor: move;
-  /* Indicate draggability */
 }
 
 .bookmark-link {
