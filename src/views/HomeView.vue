@@ -3,38 +3,37 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 
-const recipes = ref<any[]>([]) // Original recipes for recommendations
-const filteredRecipes = ref<any[]>([]) // Filtered recipes for search results
+const recipes = ref<any[]>([])
+const filteredRecipes = ref<any[]>([])
 const searchTerm = ref('')
 const imageLoadError = ref<{ [key: string]: boolean }>({})
 
-// Fetch all recipes from the backend API
 const fetchRecipes = async () => {
   try {
     const response = await axios.get('http://localhost:5000/recipes')
     recipes.value = response.data
     filteredRecipes.value = recipes.value
+    console.log('Recipes fetched:', recipes.value) // Debug log
   } catch (error) {
     console.error('Error fetching recipes:', error)
   }
 }
 
-// Watch the search term and filter recipes based on it (only for filteredRecipes)
 const filterRecipes = () => {
   if (searchTerm.value.trim() === '') {
-    filteredRecipes.value = recipes.value // Reset to all recipes when search is empty
+    filteredRecipes.value = recipes.value
   } else {
     filteredRecipes.value = recipes.value.filter((recipe) => {
       const lowercasedSearchTerm = searchTerm.value.toLowerCase()
       return (
         recipe.Name.toLowerCase().includes(lowercasedSearchTerm) ||
-        recipe.Description.toLowerCase().includes(lowercasedSearchTerm)
+        recipe.Description.toLowerCase().includes(lowercasedSearchTerm) ||
+        (recipe.Keywords && recipe.Keywords.toLowerCase().includes(lowercasedSearchTerm))
       )
     })
   }
 }
 
-// Handle image load error
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
   const recipe = recipes.value.find((r) => r.RecipeId === recipeId)
@@ -58,14 +57,15 @@ onMounted(fetchRecipes)
     </div>
 
     <div class="recommendation">
-      <div v-for="recipe in recipes" :key="recipe.RecipeId" class="recommendation-card">
+      <router-link :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }" v-for="recipe in recipes"
+        :key="recipe.RecipeId" class="recommendation-card">
         <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
-          <h4>
-            <b>{{ recipe.Name }}</b>
-          </h4>
+          <h4><b>{{ recipe.Name }}</b></h4>
+          <p class="preview">{{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
+          </p>
         </div>
-      </div>
+      </router-link>
     </div>
 
     <div class="title">
@@ -73,31 +73,31 @@ onMounted(fetchRecipes)
     </div>
     <div class="search-body">
       <br />
-      <input class="search-bar" type="text" placeholder="Search.." v-model="searchTerm" @input="filterRecipes" />
+      <input class="search-bar" type="text" placeholder="Search by name, description, or keywords" v-model="searchTerm"
+        @input="filterRecipes" />
     </div>
     <div class="item">
-      <div v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="item-card">
+      <router-link :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }"
+        v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="item-card">
         <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
-          <h4>
-            <b>{{ recipe.Name }}</b>
-          </h4>
-          <p>{{ recipe.Description }}</p>
+          <h4><b>{{ recipe.Name }}</b></h4>
+          <p class="preview">{{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
+          </p>
         </div>
-      </div>
+      </router-link>
     </div>
   </div>
 </template>
 
 <style>
-/** Images **/
 .card-image {
   width: 100%;
   height: 200px;
   object-fit: cover;
+  border-radius: 8px 8px 0 0;
 }
 
-/** Search **/
 .search-body {
   width: 100%;
   display: flex;
@@ -114,7 +114,6 @@ onMounted(fetchRecipes)
   border-radius: 4px;
 }
 
-/** Title **/
 .title {
   text-align: left;
   width: 100%;
@@ -122,7 +121,6 @@ onMounted(fetchRecipes)
   margin-top: 20px;
 }
 
-/** Body **/
 .container {
   display: flex;
   flex-direction: column;
@@ -132,7 +130,6 @@ onMounted(fetchRecipes)
   padding-right: 60px;
 }
 
-/** Recommendations (Horizontal Scroll) **/
 .recommendation {
   display: flex;
   flex-wrap: nowrap;
@@ -165,29 +162,54 @@ onMounted(fetchRecipes)
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   transition: 0.3s;
   flex-shrink: 0;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border-radius: 8px;
 }
 
-/** Items (Grid Layout) **/
 .item {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+  justify-items: center;
 }
 
 .card-container {
-  padding: 2px 16px;
+  padding: 10px 16px;
 }
 
 .item-card {
   width: 300px;
   text-align: center;
-  margin: 20px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   transition: 0.3s;
-  flex-shrink: 0;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.preview {
+  font-size: 14px;
+  color: #666;
+  margin: 5px 0 0;
 }
 
 .card:hover {
   box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 1000px) {
+  .item {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .item {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

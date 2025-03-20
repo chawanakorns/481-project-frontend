@@ -1,0 +1,259 @@
+<script setup lang="ts">
+import { defineProps, ref, onMounted } from 'vue'
+import axios from 'axios'
+import NavigationBar from '@/components/NavigationBar.vue'
+
+const props = defineProps<{
+  id: string
+  recipe?: any
+}>()
+
+const localRecipe = ref<any>(props.recipe)
+const imageLoadError = ref<{ [key: string]: boolean }>({})
+
+// Fetch recipe if not provided via props
+const fetchRecipe = async () => {
+  console.log('fetchRecipe called, localRecipe:', localRecipe.value, 'props.recipe:', props.recipe, 'props.id:', props.id)
+  if (!localRecipe.value) {
+    try {
+      console.log('Fetching recipe from backend for ID:', props.id)
+      const response = await axios.get(`http://localhost:5000/recipes/${props.id}`)
+      localRecipe.value = response.data
+      console.log('Recipe fetched:', localRecipe.value)
+    } catch (error) {
+      console.error('Error fetching recipe:', error)
+    }
+  } else {
+    console.log('Recipe already available via props, no fetch needed')
+  }
+}
+
+// Handle image load error
+const handleImageError = (recipeId: number) => {
+  imageLoadError.value[recipeId] = true
+  if (localRecipe.value && localRecipe.value.all_image_urls && localRecipe.value.all_image_urls.length > 1) {
+    const currentIndex = localRecipe.value.all_image_urls.indexOf(localRecipe.value.image_url)
+    if (currentIndex < localRecipe.value.all_image_urls.length - 1) {
+      localRecipe.value.image_url = localRecipe.value.all_image_urls[currentIndex + 1]
+    }
+  }
+}
+
+onMounted(() => {
+  console.log('DetailView mounted')
+  fetchRecipe()
+})
+</script>
+
+<template>
+  <NavigationBar />
+
+  <div class="container">
+    <div class="back-button">
+      <router-link to="/home" class="back-link">← Back to Home</router-link>
+    </div>
+
+    <div class="recipe-detail" v-if="localRecipe">
+      <div class="recipe-header">
+        <h1 class="recipe-title">{{ localRecipe.Name }}</h1>
+        <p class="recipe-meta">
+          By {{ localRecipe.AuthorName }} | Published: {{ localRecipe.DatePublished }}
+        </p>
+      </div>
+
+      <div class="recipe-content">
+        <div class="recipe-image">
+          <img :src="localRecipe.image_url" class="main-image" @error="handleImageError(localRecipe.RecipeId)" />
+        </div>
+
+        <div class="recipe-info">
+          <div class="info-card">
+            <h2>Description</h2>
+            <p>{{ localRecipe.Description || 'No description available.' }}</p>
+          </div>
+
+          <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
+            <h2>Time</h2>
+            <p v-if="localRecipe.PrepTime">Prep: {{ localRecipe.PrepTime }}</p>
+            <p v-if="localRecipe.CookTime">Cook: {{ localRecipe.CookTime }}</p>
+            <p v-if="localRecipe.TotalTime">Total: {{ localRecipe.TotalTime }}</p>
+          </div>
+
+          <div class="info-card" v-if="localRecipe.RecipeIngredientParts">
+            <h2>Ingredients</h2>
+            <ul>
+              <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')" :key="index">
+                {{ localRecipe.RecipeIngredientQuantities ? localRecipe.RecipeIngredientQuantities.split(',')[index] +
+                  '' : '' }}{{ ingredient }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="info-card" v-if="localRecipe.RecipeInstructions">
+            <h2>Instructions</h2>
+            <p>{{ localRecipe.RecipeInstructions }}</p>
+          </div>
+
+          <div class="info-card" v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
+            <h2>Nutrition (per serving)</h2>
+            <p v-if="localRecipe.Calories">Calories: {{ localRecipe.Calories }} kcal</p>
+            <p v-if="localRecipe.ProteinContent">Protein: {{ localRecipe.ProteinContent }} g</p>
+            <p v-if="localRecipe.FatContent">Fat: {{ localRecipe.FatContent }} g</p>
+            <p v-if="localRecipe.CarbohydrateContent">Carbs: {{ localRecipe.CarbohydrateContent }} g</p>
+            <p v-if="localRecipe.SugarContent">Sugar: {{ localRecipe.SugarContent }} g</p>
+            <p v-if="localRecipe.FiberContent">Fiber: {{ localRecipe.FiberContent }} g</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading" v-else>
+      <p>Loading recipe details...</p>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-top: 40px;
+  padding: 40px 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.back-button {
+  margin-bottom: 20px;
+}
+
+.back-link {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 18px;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: #0056b3;
+}
+
+.recipe-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.recipe-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.recipe-meta {
+  font-size: 16px;
+  color: #666;
+  margin-top: 10px;
+}
+
+.recipe-content {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.recipe-image {
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.main-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-info {
+  flex: 2;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.info-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #444;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.info-card p {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+  margin: 5px 0;
+}
+
+.info-card ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.info-card li {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+  color: #888;
+}
+
+@media (max-width: 768px) {
+  .recipe-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .recipe-image {
+    max-width: 100%;
+  }
+
+  .recipe-title {
+    font-size: 28px;
+  }
+
+  .info-card h2 {
+    font-size: 20px;
+  }
+
+  .info-card p,
+  .info-card li {
+    font-size: 14px;
+  }
+}
+</style>

@@ -59,7 +59,6 @@
 }
 
 @media screen and (max-width: 600px) {
-
   .topnav a,
   .topnav input[type='text'] {
     float: none;
