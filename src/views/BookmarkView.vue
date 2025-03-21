@@ -10,19 +10,30 @@ const editingFolderId = ref<number | null>(null)
 const editedFolderName = ref('')
 const bookmarks = ref<{ [key: number]: any[] }>({})
 const errorMessage = ref<string>('')
+const editingRating = ref<{ [key: number]: boolean }>({})
+const editingFolder = ref<{ [key: number]: boolean }>({})
 
 const fetchFoldersAndBookmarks = async () => {
   try {
-    // Fetch folders
-    const foldersResponse = await axios.get(`http://localhost:5000/folders?user_id=${userId.value}`)
-    folders.value = foldersResponse.data
-
-    // Fetch all bookmarks in one request
-    const bookmarksResponse = await axios.get(`http://localhost:5000/bookmarks/all?user_id=${userId.value}`)
-    bookmarks.value = bookmarksResponse.data
+    const response = await axios.get(`http://localhost:5000/bookmarks/all?user_id=${userId.value}`)
+    folders.value = response.data.folders
+    bookmarks.value = response.data.bookmarks
     errorMessage.value = ''
   } catch (error) {
     errorMessage.value = 'Failed to fetch folders or bookmarks. Please try again.'
+  }
+}
+
+const toggleEditingFolder = (folderId: number) => {
+  editingFolder.value[folderId] = !editingFolder.value[folderId]
+  if (!editingFolder.value[folderId]) {
+    if (editingFolderId.value === folderId) {
+      editingFolderId.value = null
+      editedFolderName.value = ''
+    }
+    bookmarks.value[folderId]?.forEach(bookmark => {
+      editingRating.value[bookmark.BookmarkId] = false
+    })
   }
 }
 
@@ -36,9 +47,9 @@ const createFolder = async () => {
       user_id: userId.value,
       name: newFolderName.value.trim(),
     })
-    folders.value.push({ FolderId: response.data.folder_id, UserId: userId.value, Name: newFolderName.value.trim() })
+    folders.value.push({ FolderId: response.data.folder_id, UserId: userId.value, Name: newFolderName.value.trim(), AvgRating: null })
     newFolderName.value = ''
-    await fetchFoldersAndBookmarks() // Refresh bookmarks
+    await fetchFoldersAndBookmarks()
     errorMessage.value = ''
   } catch (error) {
     errorMessage.value = 'Failed to create folder.'
@@ -76,6 +87,7 @@ const deleteFolder = async (folderId: number) => {
     await axios.delete(`http://localhost:5000/folders/${folderId}`)
     folders.value = folders.value.filter((f) => f.FolderId !== folderId)
     delete bookmarks.value[folderId]
+    delete editingFolder.value[folderId]
     errorMessage.value = ''
   } catch (error) {
     errorMessage.value = 'Failed to delete folder and its bookmarks.'
@@ -86,10 +98,32 @@ const deleteBookmark = async (folderId: number, bookmarkId: number) => {
   try {
     await axios.delete(`http://localhost:5000/bookmarks/${bookmarkId}`)
     bookmarks.value[folderId] = bookmarks.value[folderId].filter(b => b.BookmarkId !== bookmarkId)
+    await fetchFoldersAndBookmarks()
     errorMessage.value = ''
   } catch (error) {
     errorMessage.value = 'Failed to delete bookmark.'
   }
+}
+
+const startEditingRating = (bookmarkId: number) => {
+  editingRating.value[bookmarkId] = true
+}
+
+const saveRating = async (folderId: number, bookmarkId: number, newRating: number) => {
+  try {
+    await axios.put(`http://localhost:5000/bookmarks/${bookmarkId}/rating`, { rating: newRating })
+    const bookmark = bookmarks.value[folderId].find(b => b.BookmarkId === bookmarkId)
+    if (bookmark) bookmark.Rating = newRating
+    editingRating.value[bookmarkId] = false
+    await fetchFoldersAndBookmarks()
+    errorMessage.value = ''
+  } catch (error) {
+    errorMessage.value = 'Failed to update rating.'
+  }
+}
+
+const cancelEditingRating = (bookmarkId: number) => {
+  editingRating.value[bookmarkId] = false
 }
 
 const onDragStart = (event: DragEvent, bookmarkId: number, fromFolderId: number) => {
@@ -102,15 +136,15 @@ const onDrop = async (event: DragEvent, toFolderId: number) => {
   const bookmarkId = parseInt(event.dataTransfer?.getData('bookmarkId') || '0')
   const fromFolderId = parseInt(event.dataTransfer?.getData('fromFolderId') || '0')
 
-  if (fromFolderId === toFolderId) return // No change if dropped in the same folder
+  if (fromFolderId === toFolderId) return
 
   try {
     await axios.put(`http://localhost:5000/bookmarks/${bookmarkId}`, { folder_id: toFolderId })
-    // Update local state
     const bookmark = bookmarks.value[fromFolderId].find(b => b.BookmarkId === bookmarkId)
     bookmarks.value[fromFolderId] = bookmarks.value[fromFolderId].filter(b => b.BookmarkId !== bookmarkId)
     if (!bookmarks.value[toFolderId]) bookmarks.value[toFolderId] = []
     bookmarks.value[toFolderId].push({ ...bookmark, FolderId: toFolderId })
+    await fetchFoldersAndBookmarks()
     errorMessage.value = ''
   } catch (error) {
     errorMessage.value = 'Failed to move bookmark.'
@@ -118,7 +152,7 @@ const onDrop = async (event: DragEvent, toFolderId: number) => {
 }
 
 const onDragOver = (event: DragEvent) => {
-  event.preventDefault() // Allow drop
+  event.preventDefault()
 }
 
 onMounted(fetchFoldersAndBookmarks)
@@ -139,34 +173,51 @@ onActivated(fetchFoldersAndBookmarks)
     </div>
 
     <div class="folder-list">
-      <div v-for="folder in folders" :key="folder.FolderId" class="folder-card" @drop="onDrop($event, folder.FolderId)"
-        @dragover="onDragOver">
-        <div v-if="editingFolderId === folder.FolderId" class="edit-mode">
+      <div v-for="folder in folders" :key="folder.FolderId" class="folder-card"
+        :class="{ 'draggable-target': editingFolder[folder.FolderId] }" @drop="onDrop($event, folder.FolderId)"
+        @dragover="onDragOver($event)">
+        <div v-if="editingFolderId === folder.FolderId && editingFolder[folder.FolderId]" class="edit-mode">
           <input v-model="editedFolderName" type="text" class="folder-input" @keyup.enter="saveEdit(folder.FolderId)" />
           <button @click="saveEdit(folder.FolderId)" class="save-button">Save</button>
           <button @click="cancelEdit" class="cancel-button">Cancel</button>
         </div>
         <div v-else class="folder-content">
-          <h3 class="folder-name">{{ folder.Name }} ({{ bookmarks[folder.FolderId]?.length || 0 }} items)</h3>
+          <h3 class="folder-name">{{ folder.Name }} <br> ({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg: {{
+            folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})</h3>
           <div class="folder-actions">
-            <button @click="startEditing(folder)" class="edit-button">Edit</button>
-            <button @click="deleteFolder(folder.FolderId)" class="delete-button">Delete</button>
+            <button v-if="editingFolder[folder.FolderId]" @click="deleteFolder(folder.FolderId)"
+              class="delete-button">Delete</button>
+            <button v-if="editingFolder[folder.FolderId]" @click="startEditing(folder)" class="edit-button">Edit
+              Name</button>
+            <button @click="toggleEditingFolder(folder.FolderId)" class="toggle-edit-button">
+              {{ editingFolder[folder.FolderId] ? 'Done' : 'Edit' }}
+            </button>
           </div>
         </div>
         <div class="bookmarks-list">
           <div v-if="bookmarks[folder.FolderId] && bookmarks[folder.FolderId].length > 0" class="bookmark-items">
             <div v-for="bookmark in bookmarks[folder.FolderId]" :key="bookmark.BookmarkId" class="bookmark-item"
-              draggable="true" @dragstart="onDragStart($event, bookmark.BookmarkId, folder.FolderId)">
-              <router-link :to="{ name: 'detail', params: { id: bookmark.RecipeId, recipe: bookmark } }"
-                class="bookmark-link">
+              :draggable="editingFolder[folder.FolderId]"
+              @dragstart="editingFolder[folder.FolderId] ? onDragStart($event, bookmark.BookmarkId, folder.FolderId) : null">
+              <div class="bookmark-content">
                 <img :src="bookmark.image_url" class="bookmark-image" />
                 <div class="bookmark-info">
                   <p class="bookmark-name">{{ bookmark.Name }}</p>
-                  <p class="bookmark-rating">Rating: {{ bookmark.Rating }} / 5</p>
+                  <div v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]" class="rating-edit">
+                    <input v-model.number="bookmark.Rating" type="number" min="1" max="5" class="rating-input" />
+                    <button @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
+                      class="save-rating">Save</button>
+                    <button @click="cancelEditingRating(bookmark.BookmarkId)" class="cancel-rating">Cancel</button>
+                  </div>
+                  <p v-else class="bookmark-rating">
+                    Rating: {{ bookmark.Rating }} / 5
+                    <button v-if="editingFolder[folder.FolderId]" @click="startEditingRating(bookmark.BookmarkId)"
+                      class="edit-rating">Edit</button>
+                  </p>
                 </div>
-              </router-link>
-              <button @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)"
-                class="delete-bookmark-button">X</button>
+              </div>
+              <button v-if="editingFolder[folder.FolderId]"
+                @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)" class="delete-bookmark-button">X</button>
             </div>
           </div>
           <p v-else class="placeholder">No bookmarks yet</p>
@@ -231,7 +282,7 @@ onActivated(fetchFoldersAndBookmarks)
 
 .folder-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(500px, 1fr));
   gap: 20px;
 }
 
@@ -247,7 +298,7 @@ onActivated(fetchFoldersAndBookmarks)
   transform: translateY(-5px);
 }
 
-.folder-card.drag-over {
+.folder-card.draggable-target {
   background-color: #f0f0f0;
 }
 
@@ -267,13 +318,18 @@ onActivated(fetchFoldersAndBookmarks)
 .folder-actions {
   display: flex;
   gap: 10px;
+  height: 40px;
 }
 
+.toggle-edit-button,
 .edit-button,
 .delete-button,
 .save-button,
 .cancel-button,
-.delete-bookmark-button {
+.delete-bookmark-button,
+.edit-rating,
+.save-rating,
+.cancel-rating {
   padding: 5px 10px;
   font-size: 14px;
   border: none;
@@ -282,13 +338,22 @@ onActivated(fetchFoldersAndBookmarks)
   transition: background-color 0.3s;
 }
 
-.edit-button {
+.toggle-edit-button {
   background-color: #007bff;
   color: white;
 }
 
-.edit-button:hover {
+.toggle-edit-button:hover {
   background-color: #0056b3;
+}
+
+.edit-button {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.edit-button:hover {
+  background-color: #138496;
 }
 
 .delete-button {
@@ -328,6 +393,33 @@ onActivated(fetchFoldersAndBookmarks)
   background-color: #c82333;
 }
 
+.edit-rating {
+  background-color: #ffc107;
+  color: black;
+}
+
+.edit-rating:hover {
+  background-color: #e0a800;
+}
+
+.save-rating {
+  background-color: #28a745;
+  color: white;
+}
+
+.save-rating:hover {
+  background-color: #218838;
+}
+
+.cancel-rating {
+  background-color: #6c757d;
+  color: white;
+}
+
+.cancel-rating:hover {
+  background-color: #5a6268;
+}
+
 .edit-mode {
   display: flex;
   gap: 10px;
@@ -350,14 +442,16 @@ onActivated(fetchFoldersAndBookmarks)
   padding: 10px;
   background: #f9f9f9;
   border-radius: 4px;
+  height: 120px;
+}
+
+.bookmark-item[draggable="true"] {
   cursor: move;
 }
 
-.bookmark-link {
+.bookmark-content {
   display: flex;
   align-items: center;
-  text-decoration: none;
-  color: inherit;
   flex: 1;
 }
 
@@ -383,6 +477,23 @@ onActivated(fetchFoldersAndBookmarks)
   font-size: 14px;
   color: #666;
   margin: 5px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rating-edit {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.rating-input {
+  width: 50px;
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .placeholder {

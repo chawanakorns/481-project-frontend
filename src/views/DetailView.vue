@@ -80,7 +80,10 @@ onMounted(() => {
     <div class="back-button">
       <router-link to="/home" class="back-link">← Back to Home</router-link>
     </div>
-    <p v-if="feedbackMessage" :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'">
+    <p
+      v-if="feedbackMessage"
+      :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'"
+    >
       {{ feedbackMessage }}
     </p>
 
@@ -94,7 +97,11 @@ onMounted(() => {
 
       <div class="recipe-content">
         <div class="recipe-image">
-          <img :src="localRecipe.image_url" class="main-image" @error="handleImageError(localRecipe.RecipeId)" />
+          <img
+            :src="localRecipe.image_url"
+            class="main-image"
+            @error="handleImageError(localRecipe.RecipeId)"
+          />
         </div>
 
         <div class="recipe-info">
@@ -103,7 +110,10 @@ onMounted(() => {
             <p>{{ localRecipe.Description || 'No description available.' }}</p>
           </div>
 
-          <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
+          <div
+            class="info-card"
+            v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime"
+          >
             <h2>Time</h2>
             <p v-if="localRecipe.PrepTime">Prep: {{ localRecipe.PrepTime }}</p>
             <p v-if="localRecipe.CookTime">Cook: {{ localRecipe.CookTime }}</p>
@@ -113,9 +123,15 @@ onMounted(() => {
           <div class="info-card" v-if="localRecipe.RecipeIngredientParts">
             <h2>Ingredients</h2>
             <ul>
-              <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')" :key="index">
-                {{ localRecipe.RecipeIngredientQuantities ? localRecipe.RecipeIngredientQuantities.split(',')[index] +
-                  ' ' : '' }}{{ ingredient }}
+              <li
+                v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')"
+                :key="index"
+              >
+                {{
+                  localRecipe.RecipeIngredientQuantities
+                    ? localRecipe.RecipeIngredientQuantities.split(',')[index] + ' '
+                    : ''
+                }}{{ ingredient }}
               </li>
             </ul>
           </div>
@@ -125,12 +141,17 @@ onMounted(() => {
             <p>{{ localRecipe.RecipeInstructions }}</p>
           </div>
 
-          <div class="info-card" v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
+          <div
+            class="info-card"
+            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent"
+          >
             <h2>Nutrition (per serving)</h2>
             <p v-if="localRecipe.Calories">Calories: {{ localRecipe.Calories }} kcal</p>
             <p v-if="localRecipe.ProteinContent">Protein: {{ localRecipe.ProteinContent }} g</p>
             <p v-if="localRecipe.FatContent">Fat: {{ localRecipe.FatContent }} g</p>
-            <p v-if="localRecipe.CarbohydrateContent">Carbs: {{ localRecipe.CarbohydrateContent }} g</p>
+            <p v-if="localRecipe.CarbohydrateContent">
+              Carbs: {{ localRecipe.CarbohydrateContent }} g
+            </p>
             <p v-if="localRecipe.SugarContent">Sugar: {{ localRecipe.SugarContent }} g</p>
             <p v-if="localRecipe.FiberContent">Fiber: {{ localRecipe.FiberContent }} g</p>
           </div>
@@ -142,7 +163,14 @@ onMounted(() => {
                 {{ folder.Name }}
               </option>
             </select>
-            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
+            <input
+              v-model="rating"
+              type="number"
+              min="1"
+              max="5"
+              placeholder="Rate 1-5"
+              class="rating-input"
+            />
             <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
           </div>
         </div>
@@ -245,7 +273,9 @@ onMounted(() => {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
 }
 
 .info-card:hover {

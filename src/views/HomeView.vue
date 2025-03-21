@@ -57,12 +57,25 @@ onMounted(fetchRecipes)
     </div>
 
     <div class="recommendation">
-      <router-link :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }" v-for="recipe in recipes"
-        :key="recipe.RecipeId" class="recommendation-card">
-        <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
+      <router-link
+        :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }"
+        v-for="recipe in recipes"
+        :key="recipe.RecipeId"
+        class="recommendation-card"
+      >
+        <img
+          :src="recipe.image_url"
+          class="card-image"
+          @error="handleImageError(recipe.RecipeId)"
+        />
         <div class="card-container">
-          <h4><b>{{ recipe.Name }}</b></h4>
-          <p class="preview">{{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
+          <h4>
+            <b>{{ recipe.Name }}</b>
+          </h4>
+          <p class="preview">
+            {{
+              recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description'
+            }}
           </p>
         </div>
       </router-link>
@@ -73,16 +86,34 @@ onMounted(fetchRecipes)
     </div>
     <div class="search-body">
       <br />
-      <input class="search-bar" type="text" placeholder="Search by name, description, or keywords" v-model="searchTerm"
-        @input="filterRecipes" />
+      <input
+        class="search-bar"
+        type="text"
+        placeholder="Search by name, description, or keywords"
+        v-model="searchTerm"
+        @input="filterRecipes"
+      />
     </div>
     <div class="item">
-      <router-link :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }"
-        v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="item-card">
-        <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
+      <router-link
+        :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }"
+        v-for="recipe in filteredRecipes"
+        :key="recipe.RecipeId"
+        class="item-card"
+      >
+        <img
+          :src="recipe.image_url"
+          class="card-image"
+          @error="handleImageError(recipe.RecipeId)"
+        />
         <div class="card-container">
-          <h4><b>{{ recipe.Name }}</b></h4>
-          <p class="preview">{{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
+          <h4>
+            <b>{{ recipe.Name }}</b>
+          </h4>
+          <p class="preview">
+            {{
+              recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description'
+            }}
           </p>
         </div>
       </router-link>
