@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
+import DetailView from '@/views/DetailView.vue'
 
 const recipes = ref<any[]>([])
 const filteredRecipes = ref<any[]>([])
 const searchTerm = ref('')
 const imageLoadError = ref<{ [key: string]: boolean }>({})
+const selectedRecipe = ref<any | null>(null)
+const showModal = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = 20
 
 const fetchRecipes = async () => {
   try {
     const response = await axios.get('http://localhost:5000/recipes')
     recipes.value = response.data
     filteredRecipes.value = recipes.value
-    console.log('Recipes fetched:', recipes.value) // Debug log
+    console.log('Recipes fetched:', recipes.value)
   } catch (error) {
     console.error('Error fetching recipes:', error)
   }
@@ -32,6 +37,7 @@ const filterRecipes = () => {
       )
     })
   }
+  currentPage.value = 1
 }
 
 const handleImageError = (recipeId: number) => {
@@ -42,6 +48,39 @@ const handleImageError = (recipeId: number) => {
     if (currentIndex < recipe.all_image_urls.length - 1) {
       recipe.image_url = recipe.all_image_urls[currentIndex + 1]
     }
+  }
+}
+
+const openModal = (recipe: any) => {
+  selectedRecipe.value = recipe
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+  selectedRecipe.value = null
+}
+
+// Computed property for recommendation (limited to 10 items)
+const recommendedRecipes = computed(() => {
+  return recipes.value.slice(0, 10)
+})
+
+// Computed property for paginated items (Featured section)
+const paginatedRecipes = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredRecipes.value.slice(start, end)
+})
+
+// Total number of pages
+const totalPages = computed(() => {
+  return Math.ceil(filteredRecipes.value.length / itemsPerPage)
+})
+
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
   }
 }
 
@@ -57,28 +96,18 @@ onMounted(fetchRecipes)
     </div>
 
     <div class="recommendation">
-      <router-link
-        :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }"
-        v-for="recipe in recipes"
-        :key="recipe.RecipeId"
-        class="recommendation-card"
-      >
-        <img
-          :src="recipe.image_url"
-          class="card-image"
-          @error="handleImageError(recipe.RecipeId)"
-        />
+      <div v-for="recipe in recommendedRecipes" :key="recipe.RecipeId" class="recommendation-card"
+        @click="openModal(recipe)">
+        <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
             <b>{{ recipe.Name }}</b>
           </h4>
           <p class="preview">
-            {{
-              recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description'
-            }}
+            {{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
           </p>
         </div>
-      </router-link>
+      </div>
     </div>
 
     <div class="title">
@@ -86,37 +115,41 @@ onMounted(fetchRecipes)
     </div>
     <div class="search-body">
       <br />
-      <input
-        class="search-bar"
-        type="text"
-        placeholder="Search by name, description, or keywords"
-        v-model="searchTerm"
-        @input="filterRecipes"
-      />
+      <input class="search-bar" type="text" placeholder="Search..." v-model="searchTerm" @input="filterRecipes" />
     </div>
     <div class="item">
-      <router-link
-        :to="{ name: 'detail', params: { id: recipe.RecipeId, recipe: recipe } }"
-        v-for="recipe in filteredRecipes"
-        :key="recipe.RecipeId"
-        class="item-card"
-      >
-        <img
-          :src="recipe.image_url"
-          class="card-image"
-          @error="handleImageError(recipe.RecipeId)"
-        />
+      <div v-for="recipe in paginatedRecipes" :key="recipe.RecipeId" class="item-card" @click="openModal(recipe)">
+        <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
             <b>{{ recipe.Name }}</b>
           </h4>
           <p class="preview">
-            {{
-              recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description'
-            }}
+            {{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
           </p>
         </div>
-      </router-link>
+      </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination" v-if="totalPages > 1">
+      <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" class="pagination-button">
+        Previous
+      </button>
+      <span class="pagination-info">
+        Page {{ currentPage }} of {{ totalPages }}
+      </span>
+      <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" class="pagination-button">
+        Next
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+    <div class="modal-content">
+      <button class="close-button" @click="closeModal">X</button>
+      <DetailView :id="selectedRecipe.RecipeId.toString()" :recipe="selectedRecipe" />
     </div>
   </div>
 </template>
@@ -126,7 +159,7 @@ onMounted(fetchRecipes)
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 8px 8px 0 0;
+  border-radius: 8px 8px 8px 8px;
 }
 
 .search-body {
@@ -159,6 +192,7 @@ onMounted(fetchRecipes)
   margin-top: 60px;
   padding-left: 60px;
   padding-right: 60px;
+  padding-bottom: 60px;
 }
 
 .recommendation {
@@ -197,11 +231,12 @@ onMounted(fetchRecipes)
   color: inherit;
   background: #fff;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .item {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
   width: 100%;
   justify-items: center;
@@ -220,6 +255,7 @@ onMounted(fetchRecipes)
   color: inherit;
   background: #fff;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .preview {
@@ -230,6 +266,84 @@ onMounted(fetchRecipes)
 
 .card:hover {
   box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 40px;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.close-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  z-index: 10;
+}
+
+.close-button:hover {
+  background: #c82333;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.pagination-button {
+  padding: 8px 16px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.pagination-button:hover {
+  background-color: #0056b3;
+}
+
+.pagination-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 16px;
+  color: #666;
 }
 
 @media (max-width: 1000px) {

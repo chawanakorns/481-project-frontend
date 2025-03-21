@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { defineProps, ref, onMounted } from 'vue'
 import axios from 'axios'
-import NavigationBar from '@/components/NavigationBar.vue'
 
 const props = defineProps<{
   id: string
@@ -14,7 +13,7 @@ const folders = ref<any[]>([])
 const selectedFolderId = ref<number | null>(null)
 const rating = ref<number>(1)
 const userId = ref(1) // Replace with actual auth logic
-const feedbackMessage = ref<string>('') // Added for feedback
+const feedbackMessage = ref<string>('')
 
 const fetchRecipe = async () => {
   if (!localRecipe.value) {
@@ -74,16 +73,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <NavigationBar />
-
-  <div class="container">
-    <div class="back-button">
-      <router-link to="/home" class="back-link">← Back to Home</router-link>
-    </div>
-    <p
-      v-if="feedbackMessage"
-      :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'"
-    >
+  <div class="modal-container">
+    <p v-if="feedbackMessage" :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'">
       {{ feedbackMessage }}
     </p>
 
@@ -97,11 +88,7 @@ onMounted(() => {
 
       <div class="recipe-content">
         <div class="recipe-image">
-          <img
-            :src="localRecipe.image_url"
-            class="main-image"
-            @error="handleImageError(localRecipe.RecipeId)"
-          />
+          <img :src="localRecipe.image_url" class="main-image" @error="handleImageError(localRecipe.RecipeId)" />
         </div>
 
         <div class="recipe-info">
@@ -110,10 +97,7 @@ onMounted(() => {
             <p>{{ localRecipe.Description || 'No description available.' }}</p>
           </div>
 
-          <div
-            class="info-card"
-            v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime"
-          >
+          <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
             <h2>Time</h2>
             <p v-if="localRecipe.PrepTime">Prep: {{ localRecipe.PrepTime }}</p>
             <p v-if="localRecipe.CookTime">Cook: {{ localRecipe.CookTime }}</p>
@@ -123,10 +107,7 @@ onMounted(() => {
           <div class="info-card" v-if="localRecipe.RecipeIngredientParts">
             <h2>Ingredients</h2>
             <ul>
-              <li
-                v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')"
-                :key="index"
-              >
+              <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')" :key="index">
                 {{
                   localRecipe.RecipeIngredientQuantities
                     ? localRecipe.RecipeIngredientQuantities.split(',')[index] + ' '
@@ -141,10 +122,7 @@ onMounted(() => {
             <p>{{ localRecipe.RecipeInstructions }}</p>
           </div>
 
-          <div
-            class="info-card"
-            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent"
-          >
+          <div class="info-card" v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
             <h2>Nutrition (per serving)</h2>
             <p v-if="localRecipe.Calories">Calories: {{ localRecipe.Calories }} kcal</p>
             <p v-if="localRecipe.ProteinContent">Protein: {{ localRecipe.ProteinContent }} g</p>
@@ -163,14 +141,7 @@ onMounted(() => {
                 {{ folder.Name }}
               </option>
             </select>
-            <input
-              v-model="rating"
-              type="number"
-              min="1"
-              max="5"
-              placeholder="Rate 1-5"
-              class="rating-input"
-            />
+            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
             <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
           </div>
         </div>
@@ -184,28 +155,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  margin-top: 40px;
-  padding: 40px 20px;
+.modal-container {
   font-family: 'Arial', sans-serif;
-}
-
-.back-button {
-  margin-bottom: 20px;
-}
-
-.back-link {
-  text-decoration: none;
-  color: #007bff;
-  font-size: 18px;
-  font-weight: 500;
-  transition: color 0.3s;
-}
-
-.back-link:hover {
-  color: #0056b3;
 }
 
 .success-message {
@@ -273,9 +224,7 @@ onMounted(() => {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition:
-    transform 0.3s,
-    box-shadow 0.3s;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .info-card:hover {

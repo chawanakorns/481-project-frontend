@@ -182,8 +182,9 @@ onActivated(fetchFoldersAndBookmarks)
           <button @click="cancelEdit" class="cancel-button">Cancel</button>
         </div>
         <div v-else class="folder-content">
-          <h3 class="folder-name">{{ folder.Name }} <br> ({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg: {{
-            folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})</h3>
+          <h3 class="folder-name">{{ folder.Name }} <br> <i>({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg:
+              {{
+                folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})</i></h3>
           <div class="folder-actions">
             <button v-if="editingFolder[folder.FolderId]" @click="deleteFolder(folder.FolderId)"
               class="delete-button">Delete</button>
