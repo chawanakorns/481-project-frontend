@@ -4,6 +4,12 @@ import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 import DetailView from '@/views/DetailView.vue'
 
+// Import the local placeholder image
+import placeholderImage from '@/assets/placeholder.jpg'
+
+// Placeholder image (use the imported image)
+const PLACEHOLDER_IMAGE = placeholderImage
+
 const userId = ref(1) // Replace with actual auth logic later
 const recipes = ref<any[]>([])
 const filteredRecipes = ref<any[]>([])
@@ -66,12 +72,14 @@ const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
   const recipe = filteredRecipes.value.find((r) => r.RecipeId === recipeId) ||
     recommendedRecipes.value.find((r) => r.RecipeId === recipeId)
-  if (recipe && recipe.all_image_urls && recipe.all_image_urls.length > 1) {
-    const currentIndex = recipe.all_image_urls.indexOf(recipe.image_url)
-    if (currentIndex < recipe.all_image_urls.length - 1) {
-      recipe.image_url = recipe.all_image_urls[currentIndex + 1]
-    }
+  if (recipe) {
+    recipe.image_url = PLACEHOLDER_IMAGE // Fallback for invalid URLs
   }
+}
+
+// Function to determine the image source with "character(0)" check
+const getImageUrl = (recipe: any) => {
+  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
 }
 
 const openModal = (recipe: any) => {
@@ -129,10 +137,10 @@ onMounted(async () => {
     <div class="recommendation">
       <div v-for="recipe in recommendedRecipes" :key="recipe.RecipeId" class="recommendation-card"
         @click="openModal(recipe)">
-        <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
+        <img :src="getImageUrl(recipe)" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
-            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) + '' : 'Name not loaded' }}</b>
+            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) : 'Name not loaded' }}</b>
           </h4>
           <p class="preview">
             {{ recipe.Description ? recipe.Description.substring(0, 38) + '...' : 'No description' }}
@@ -163,10 +171,10 @@ onMounted(async () => {
 
     <div class="item">
       <div v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="item-card" @click="openModal(recipe)">
-        <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
+        <img :src="getImageUrl(recipe)" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
-            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) + '' : 'Name not loaded' }}</b>
+            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) : 'Name not loaded' }}</b>
           </h4>
           <p class="preview">
             {{ recipe.Description ? recipe.Description.substring(0, 38) + '...' : 'No description' }}
@@ -419,21 +427,6 @@ onMounted(async () => {
 .pagination-info {
   font-size: 16px;
   color: #666;
-}
-
-.recommendation-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  justify-content: center;
-}
-
-.folder-select {
-  padding: 8px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 .no-recommendations {
