@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 import DetailView from '@/views/DetailView.vue'
@@ -7,42 +7,64 @@ import DetailView from '@/views/DetailView.vue'
 const recipes = ref<any[]>([])
 const filteredRecipes = ref<any[]>([])
 const searchTerm = ref('')
+const correctedQuery = ref<string | null>(null)
+const originalQuery = ref<string | null>(null)
+const suggestions = ref<string[]>([])
 const imageLoadError = ref<{ [key: string]: boolean }>({})
 const selectedRecipe = ref<any | null>(null)
 const showModal = ref(false)
 const currentPage = ref(1)
 const itemsPerPage = 20
+const totalPages = ref(1)  // Now updated from backend
+const totalResults = ref(0)  // Track total results from backend
 
 const fetchRecipes = async () => {
   try {
-    const response = await axios.get('http://localhost:5000/recipes')
-    recipes.value = response.data
-    filteredRecipes.value = recipes.value
-    console.log('Recipes fetched:', recipes.value)
+    const response = await axios.get('http://localhost:5000/recipes', {
+      params: {
+        limit: itemsPerPage,
+        page: currentPage.value
+      }
+    })
+    filteredRecipes.value = response.data.recipes
+    totalPages.value = response.data.total_pages
+    totalResults.value = response.data.total_results
+    console.log('Recipes fetched:', filteredRecipes.value)
   } catch (error) {
     console.error('Error fetching recipes:', error)
   }
 }
 
-const filterRecipes = () => {
-  if (searchTerm.value.trim() === '') {
-    filteredRecipes.value = recipes.value
-  } else {
-    filteredRecipes.value = recipes.value.filter((recipe) => {
-      const lowercasedSearchTerm = searchTerm.value.toLowerCase()
-      return (
-        recipe.Name.toLowerCase().includes(lowercasedSearchTerm) ||
-        recipe.Description.toLowerCase().includes(lowercasedSearchTerm) ||
-        (recipe.Keywords && recipe.Keywords.some((kw: string) => kw.toLowerCase().includes(lowercasedSearchTerm)))
-      )
+const filterRecipes = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/recipes', {
+      params: {
+        search: searchTerm.value.trim(),
+        limit: itemsPerPage,
+        page: currentPage.value
+      }
     })
+    filteredRecipes.value = response.data.recipes
+    originalQuery.value = response.data.original_query
+    correctedQuery.value = response.data.corrected_query
+    suggestions.value = response.data.suggestions
+    totalPages.value = response.data.total_pages
+    totalResults.value = response.data.total_results
+    currentPage.value = response.data.current_page
+  } catch (error) {
+    console.error('Error filtering recipes:', error)
   }
-  currentPage.value = 1
+}
+
+const useSuggestion = async (suggestion: string) => {
+  searchTerm.value = suggestion
+  currentPage.value = 1  // Reset to page 1 when using a suggestion
+  await filterRecipes()
 }
 
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
-  const recipe = recipes.value.find((r) => r.RecipeId === recipeId)
+  const recipe = filteredRecipes.value.find((r) => r.RecipeId === recipeId)
   if (recipe && recipe.all_image_urls && recipe.all_image_urls.length > 1) {
     const currentIndex = recipe.all_image_urls.indexOf(recipe.image_url)
     if (currentIndex < recipe.all_image_urls.length - 1) {
@@ -61,30 +83,33 @@ const closeModal = () => {
   selectedRecipe.value = null
 }
 
-// Computed property for recommendation (limited to 10 items)
-const recommendedRecipes = computed(() => {
-  return recipes.value.slice(0, 10)
-})
-
-// Computed property for paginated items (Featured section)
-const paginatedRecipes = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredRecipes.value.slice(start, end)
-})
-
-// Total number of pages
-const totalPages = computed(() => {
-  return Math.ceil(filteredRecipes.value.length / itemsPerPage)
-})
+const recommendedRecipes = ref<any[]>([])
+const fetchRecommendedRecipes = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/recipes', {
+      params: { limit: 10, page: 1 }
+    })
+    recommendedRecipes.value = response.data.recipes.slice(0, 10)
+  } catch (error) {
+    console.error('Error fetching recommended recipes:', error)
+  }
+}
 
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
+    if (searchTerm.value.trim()) {
+      filterRecipes()
+    } else {
+      fetchRecipes()
+    }
   }
 }
 
-onMounted(fetchRecipes)
+onMounted(() => {
+  fetchRecipes()
+  fetchRecommendedRecipes()
+})
 </script>
 
 <template>
@@ -111,7 +136,7 @@ onMounted(fetchRecipes)
     </div>
 
     <div class="title">
-      <h1>Featured</h1>
+      <h1>Explores</h1>
     </div>
     <div class="search-body">
       <br />
@@ -121,8 +146,20 @@ onMounted(fetchRecipes)
         <button class="search-button" @click="filterRecipes">Search</button>
       </div>
     </div>
+
+    <div v-if="correctedQuery && correctedQuery !== originalQuery" class="spell-suggestion">
+      Did you mean: <strong>{{ correctedQuery }}</strong>?
+    </div>
+    <div v-if="suggestions.length" class="suggestions">
+      Suggestions:
+      <span v-for="(suggestion, index) in suggestions" :key="index">
+        <a href="#" @click.prevent="useSuggestion(suggestion)">{{ suggestion }}</a>
+        <span v-if="index < suggestions.length - 1">, </span>
+      </span>
+    </div>
+
     <div class="item">
-      <div v-for="recipe in paginatedRecipes" :key="recipe.RecipeId" class="item-card" @click="openModal(recipe)">
+      <div v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="item-card" @click="openModal(recipe)">
         <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
@@ -141,7 +178,7 @@ onMounted(fetchRecipes)
         Previous
       </button>
       <span class="pagination-info">
-        Page {{ currentPage }} of {{ totalPages }}
+        Page {{ currentPage }} of {{ totalPages }} ({{ totalResults }} results)
       </span>
       <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" class="pagination-button">
         Next
@@ -191,6 +228,28 @@ onMounted(fetchRecipes)
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s;
+}
+
+.spell-suggestion {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.suggestions {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #333;
+}
+
+.suggestions a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.suggestions a:hover {
+  text-decoration: underline;
 }
 
 .title {
