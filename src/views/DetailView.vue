@@ -14,6 +14,7 @@ const selectedFolderId = ref<number | null>(null)
 const rating = ref<number>(1)
 const userId = ref(1) // Replace with actual auth logic
 const feedbackMessage = ref<string>('')
+const showBookmarkSection = ref(false)
 
 const fetchRecipe = async () => {
   if (!localRecipe.value) {
@@ -66,6 +67,10 @@ const handleImageError = (recipeId: number) => {
   }
 }
 
+const toggleBookmarkSection = () => {
+  showBookmarkSection.value = !showBookmarkSection.value
+}
+
 onMounted(() => {
   fetchRecipe()
   fetchFolders()
@@ -89,6 +94,22 @@ onMounted(() => {
       <div class="recipe-content">
         <div class="recipe-image">
           <img :src="localRecipe.image_url" class="main-image" @error="handleImageError(localRecipe.RecipeId)" />
+          <button v-if="!showBookmarkSection" @click="toggleBookmarkSection" class="toggle-bookmark-button">
+            Bookmark
+          </button>
+          <div class="info-card bookmark-section" v-if="showBookmarkSection">
+            <h2>Bookmark</h2>
+            <select v-model="selectedFolderId" class="folder-select">
+              <option v-for="folder in folders" :value="folder.FolderId" :key="folder.FolderId">
+                {{ folder.Name }}
+              </option>
+            </select>
+            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
+            <div class="bookmark-actions">
+              <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
+              <button @click="toggleBookmarkSection" class="cancel-button">Cancel</button>
+            </div>
+          </div>
         </div>
 
         <div class="recipe-info">
@@ -97,24 +118,26 @@ onMounted(() => {
             <p>{{ localRecipe.Description || 'No description available.' }}</p>
           </div>
 
-          <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
-            <h2>Time</h2>
-            <p v-if="localRecipe.PrepTime">Prep: {{ localRecipe.PrepTime }}</p>
-            <p v-if="localRecipe.CookTime">Cook: {{ localRecipe.CookTime }}</p>
-            <p v-if="localRecipe.TotalTime">Total: {{ localRecipe.TotalTime }}</p>
-          </div>
+          <div style="display: flex; gap: 20px;">
+            <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
+              <h2>Time</h2>
+              <p v-if="localRecipe.PrepTime">Prep: {{ localRecipe.PrepTime }}</p>
+              <p v-if="localRecipe.CookTime">Cook: {{ localRecipe.CookTime }}</p>
+              <p v-if="localRecipe.TotalTime">Total: {{ localRecipe.TotalTime }}</p>
+            </div>
 
-          <div class="info-card" v-if="localRecipe.RecipeIngredientParts">
-            <h2>Ingredients</h2>
-            <ul>
-              <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')" :key="index">
-                {{
-                  localRecipe.RecipeIngredientQuantities
-                    ? localRecipe.RecipeIngredientQuantities.split(',')[index] + ' '
-                    : ''
-                }}{{ ingredient }}
-              </li>
-            </ul>
+            <div class="info-card" v-if="localRecipe.RecipeIngredientParts">
+              <h2>Ingredients</h2>
+              <ul>
+                <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts.split(',')" :key="index">
+                  {{
+                    localRecipe.RecipeIngredientQuantities
+                      ? localRecipe.RecipeIngredientQuantities.split(',')[index] + ' '
+                      : ''
+                  }}{{ ingredient }}
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div class="info-card" v-if="localRecipe.RecipeInstructions">
@@ -132,17 +155,6 @@ onMounted(() => {
             </p>
             <p v-if="localRecipe.SugarContent">Sugar: {{ localRecipe.SugarContent }} g</p>
             <p v-if="localRecipe.FiberContent">Fiber: {{ localRecipe.FiberContent }} g</p>
-          </div>
-
-          <div class="info-card bookmark-section">
-            <h2>Bookmark</h2>
-            <select v-model="selectedFolderId" class="folder-select">
-              <option v-for="folder in folders" :value="folder.FolderId" :key="folder.FolderId">
-                {{ folder.Name }}
-              </option>
-            </select>
-            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
-            <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
           </div>
         </div>
       </div>
@@ -201,6 +213,7 @@ onMounted(() => {
   flex: 1;
   min-width: 300px;
   max-width: 500px;
+  position: relative;
 }
 
 .main-image {
@@ -221,15 +234,11 @@ onMounted(() => {
 
 .info-card {
   background: #fff;
+  width: 100%;
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.info-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .info-card h2 {
@@ -263,6 +272,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 20px;
 }
 
 .folder-select {
@@ -280,6 +290,11 @@ onMounted(() => {
   width: 100px;
 }
 
+.bookmark-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .bookmark-button {
   padding: 10px;
   font-size: 16px;
@@ -289,10 +304,46 @@ onMounted(() => {
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s;
+  flex: 1;
+  /* Equal width with cancel button */
 }
 
 .bookmark-button:hover {
   background-color: #218838;
+}
+
+.cancel-button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  flex: 1;
+  /* Equal width with bookmark button */
+}
+
+.cancel-button:hover {
+  background-color: #c82333;
+}
+
+.toggle-bookmark-button {
+  padding: 8px 16px;
+  width: 100%;
+  font-size: 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+.toggle-bookmark-button:hover {
+  background-color: #0056b3;
 }
 
 .loading {
