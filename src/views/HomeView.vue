@@ -4,6 +4,7 @@ import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 import DetailView from '@/views/DetailView.vue'
 
+const userId = ref(1) // Replace with actual auth logic later
 const recipes = ref<any[]>([])
 const filteredRecipes = ref<any[]>([])
 const searchTerm = ref('')
@@ -14,8 +15,10 @@ const selectedRecipe = ref<any | null>(null)
 const showModal = ref(false)
 const currentPage = ref(1)
 const itemsPerPage = 20
-const totalPages = ref(1)  // Now updated from backend
-const totalResults = ref(0)  // Track total results from backend
+const totalPages = ref(1)
+const totalResults = ref(0)
+const recommendedRecipes = ref<any[]>([])
+const recommendationMessage = ref<string>('')
 
 const fetchRecipes = async () => {
   try {
@@ -28,7 +31,6 @@ const fetchRecipes = async () => {
     filteredRecipes.value = response.data.recipes
     totalPages.value = response.data.total_pages
     totalResults.value = response.data.total_results
-    console.log('Recipes fetched:', filteredRecipes.value)
   } catch (error) {
     console.error('Error fetching recipes:', error)
   }
@@ -56,13 +58,14 @@ const filterRecipes = async () => {
 
 const useSuggestion = async (suggestion: string) => {
   searchTerm.value = suggestion
-  currentPage.value = 1  // Reset to page 1 when using a suggestion
+  currentPage.value = 1
   await filterRecipes()
 }
 
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
-  const recipe = filteredRecipes.value.find((r) => r.RecipeId === recipeId)
+  const recipe = filteredRecipes.value.find((r) => r.RecipeId === recipeId) ||
+    recommendedRecipes.value.find((r) => r.RecipeId === recipeId)
   if (recipe && recipe.all_image_urls && recipe.all_image_urls.length > 1) {
     const currentIndex = recipe.all_image_urls.indexOf(recipe.image_url)
     if (currentIndex < recipe.all_image_urls.length - 1) {
@@ -81,15 +84,20 @@ const closeModal = () => {
   selectedRecipe.value = null
 }
 
-const recommendedRecipes = ref<any[]>([])
 const fetchRecommendedRecipes = async () => {
   try {
-    const response = await axios.get('http://localhost:5000/recipes', {
-      params: { limit: 10, page: 1 }
+    const response = await axios.get('http://localhost:5000/recommendations', {
+      params: {
+        user_id: userId.value,
+        limit: 10
+      }
     })
-    recommendedRecipes.value = response.data.recipes.slice(0, 10)
+    recommendedRecipes.value = response.data.recommendations
+    recommendationMessage.value = response.data.message || ''
   } catch (error) {
     console.error('Error fetching recommended recipes:', error)
+    recommendedRecipes.value = []
+    recommendationMessage.value = 'Failed to load recommendations.'
   }
 }
 
@@ -104,9 +112,9 @@ const goToPage = (page: number) => {
   }
 }
 
-onMounted(() => {
-  fetchRecipes()
-  fetchRecommendedRecipes()
+onMounted(async () => {
+  await fetchRecipes()
+  await fetchRecommendedRecipes()
 })
 </script>
 
@@ -131,10 +139,13 @@ onMounted(() => {
           </p>
         </div>
       </div>
+      <div v-if="recommendedRecipes.length === 0" class="no-recommendations">
+        <p>{{ recommendationMessage || 'No new recommendations available. Explore more recipes!' }}</p>
+      </div>
     </div>
 
     <div class="title">
-      <h1>Explores</h1>
+      <h1>Explore</h1>
     </div>
     <div class="search-body">
       <br />
@@ -147,7 +158,7 @@ onMounted(() => {
 
     <div v-if="correctedQuery && correctedQuery !== originalQuery" class="spell-suggestion">
       Did you mean:<a href="#" @click.prevent="useSuggestion(correctedQuery)"><strong>{{ correctedQuery
-      }}</strong></a>?
+          }}</strong></a>?
     </div>
 
     <div class="item">
@@ -155,16 +166,15 @@ onMounted(() => {
         <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
-            <b>{{ recipe.Name }}</b>
+            <b>{{ recipe.Name ? recipe.Name.substring(0, 38) + '' : 'Name not loaded' }}</b>
           </h4>
           <p class="preview">
-            {{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
+            {{ recipe.Description ? recipe.Description.substring(0, 42) + '...' : 'No description' }}
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Pagination Controls -->
     <div class="pagination" v-if="totalPages > 1">
       <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" class="pagination-button">
         Previous
@@ -178,7 +188,6 @@ onMounted(() => {
     </div>
   </div>
 
-  <!-- Modal -->
   <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
       <button class="close-button" @click="closeModal">X</button>
@@ -303,11 +312,13 @@ onMounted(() => {
 }
 
 .card-container {
+  text-align: left;
   padding: 10px 16px;
 }
 
 .item-card {
   width: 100%;
+  height: 100%;
   text-align: center;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   transition: 0.3s;
@@ -404,6 +415,28 @@ onMounted(() => {
 .pagination-info {
   font-size: 16px;
   color: #666;
+}
+
+.recommendation-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.folder-select {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.no-recommendations {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 16px;
 }
 
 @media (max-width: 1000px) {
