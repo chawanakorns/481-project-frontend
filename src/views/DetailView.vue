@@ -114,20 +114,26 @@ onMounted(() => {
 
         <div class="recipe-info">
           <div class="info-card">
-            <h2>Description</h2>
+            <u>
+              <h2>Description</h2>
+            </u>
             <p>{{ localRecipe.Description || 'No description available.' }}</p>
           </div>
 
           <div style="display: flex; gap: 20px;">
             <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
-              <h2>Time</h2>
+              <u>
+                <h2>Time</h2>
+              </u>
               <p v-if="localRecipe.PrepTime">Prep: {{ localRecipe.PrepTime }} minutes</p>
               <p v-if="localRecipe.CookTime">Cook: {{ localRecipe.CookTime }} minutes</p>
               <p v-if="localRecipe.TotalTime">Total: {{ localRecipe.TotalTime }} minutes</p>
             </div>
 
             <div class="info-card" v-if="localRecipe.RecipeIngredientParts">
-              <h2>Ingredients</h2>
+              <u>
+                <h2>Ingredients</h2>
+              </u>
               <ul>
                 <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts" :key="index">
                   {{ localRecipe.RecipeIngredientQuantities?.[index] || '' }} {{ ingredient }}
@@ -137,14 +143,18 @@ onMounted(() => {
           </div>
 
           <div class="info-card" v-if="localRecipe.RecipeInstructions">
-            <h2>Instructions</h2>
+            <u>
+              <h2>Instructions</h2>
+            </u>
             <ol>
               <li v-for="(step, index) in localRecipe.RecipeInstructions" :key="index">{{ step }}</li>
             </ol>
           </div>
 
           <div class="info-card" v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
-            <h2>Nutrition (per serving)</h2>
+            <u>
+              <h2>Nutrition (per serving)</h2>
+            </u>
             <p v-if="localRecipe.Calories">Calories: {{ localRecipe.Calories }} kcal</p>
             <p v-if="localRecipe.ProteinContent">Protein: {{ localRecipe.ProteinContent }} g</p>
             <p v-if="localRecipe.FatContent">Fat: {{ localRecipe.FatContent }} g</p>
