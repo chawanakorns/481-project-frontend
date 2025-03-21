@@ -115,7 +115,11 @@ onMounted(fetchRecipes)
     </div>
     <div class="search-body">
       <br />
-      <input class="search-bar" type="text" placeholder="Search..." v-model="searchTerm" @input="filterRecipes" />
+      <div class="search-container">
+        <input class="search-bar" type="text" placeholder="Search..." v-model="searchTerm"
+          @keyup.enter="filterRecipes" />
+        <button class="search-button" @click="filterRecipes">Search</button>
+      </div>
     </div>
     <div class="item">
       <div v-for="recipe in paginatedRecipes" :key="recipe.RecipeId" class="item-card" @click="openModal(recipe)">
@@ -165,7 +169,7 @@ onMounted(fetchRecipes)
 .search-body {
   width: 100%;
   display: flex;
-  justify-content: right;
+  justify-content: center;
   text-align: center;
 }
 
@@ -176,6 +180,17 @@ onMounted(fetchRecipes)
   font-size: 17px;
   border: 1px solid #ccc;
   border-radius: 4px;
+}
+
+.search-button {
+  padding: 10px 20px;
+  font-size: 17px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .title {
