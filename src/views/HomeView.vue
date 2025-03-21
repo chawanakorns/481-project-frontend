@@ -143,7 +143,7 @@ onMounted(async () => {
             <b>{{ recipe.Name ? recipe.Name.substring(0, 34) : 'Name not loaded' }}</b>
           </h4>
           <p class="preview">
-            {{ recipe.Description ? recipe.Description.substring(0, 38) + '...' : 'No description' }}
+            {{ recipe.Description ? recipe.Description.substring(0, 34) + '...' : 'No description' }}
           </p>
         </div>
       </div>
@@ -166,7 +166,7 @@ onMounted(async () => {
 
     <div v-if="correctedQuery && correctedQuery !== originalQuery" class="spell-suggestion">
       Did you mean:<a href="#" @click.prevent="useSuggestion(correctedQuery)"><strong>{{ correctedQuery
-      }}</strong></a>?
+          }}</strong></a>?
     </div>
 
     <div class="item">
@@ -177,7 +177,7 @@ onMounted(async () => {
             <b>{{ recipe.Name ? recipe.Name.substring(0, 34) : 'Name not loaded' }}</b>
           </h4>
           <p class="preview">
-            {{ recipe.Description ? recipe.Description.substring(0, 38) + '...' : 'No description' }}
+            {{ recipe.Description ? recipe.Description.substring(0, 34) + '...' : 'No description' }}
           </p>
         </div>
       </div>

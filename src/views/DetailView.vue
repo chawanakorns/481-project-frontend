@@ -2,6 +2,12 @@
 import { defineProps, ref, onMounted } from 'vue'
 import axios from 'axios'
 
+// Import the local placeholder image
+import placeholderImage from '@/assets/placeholder.jpg'
+
+// Placeholder image constant
+const PLACEHOLDER_IMAGE = placeholderImage
+
 const props = defineProps<{
   id: string
   recipe?: any
@@ -57,13 +63,15 @@ const bookmarkRecipe = async () => {
   }
 }
 
+// Function to determine the image source with "character(0)" check
+const getImageUrl = (recipe: any) => {
+  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
+}
+
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
-  if (localRecipe.value?.all_image_urls?.length > 1) {
-    const currentIndex = localRecipe.value.all_image_urls.indexOf(localRecipe.value.image_url)
-    if (currentIndex < localRecipe.value.all_image_urls.length - 1) {
-      localRecipe.value.image_url = localRecipe.value.all_image_urls[currentIndex + 1]
-    }
+  if (localRecipe.value) {
+    localRecipe.value.image_url = PLACEHOLDER_IMAGE // Set to placeholder instead of cycling
   }
 }
 
@@ -79,10 +87,7 @@ onMounted(() => {
 
 <template>
   <div class="modal-container">
-    <p
-      v-if="feedbackMessage"
-      :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'"
-    >
+    <p v-if="feedbackMessage" :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'">
       {{ feedbackMessage }}
     </p>
 
@@ -96,16 +101,8 @@ onMounted(() => {
 
       <div class="recipe-content">
         <div class="recipe-image">
-          <img
-            :src="localRecipe.image_url"
-            class="main-image"
-            @error="handleImageError(localRecipe.RecipeId)"
-          />
-          <button
-            v-if="!showBookmarkSection"
-            @click="toggleBookmarkSection"
-            class="toggle-bookmark-button"
-          >
+          <img :src="getImageUrl(localRecipe)" class="main-image" @error="handleImageError(localRecipe.RecipeId)" />
+          <button v-if="!showBookmarkSection" @click="toggleBookmarkSection" class="toggle-bookmark-button">
             Bookmark
           </button>
           <div class="info-card bookmark-section" v-if="showBookmarkSection">
@@ -115,14 +112,7 @@ onMounted(() => {
                 {{ folder.Name }}
               </option>
             </select>
-            <input
-              v-model="rating"
-              type="number"
-              min="1"
-              max="5"
-              placeholder="Rate 1-5"
-              class="rating-input"
-            />
+            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
             <div class="bookmark-actions">
               <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
               <button @click="toggleBookmarkSection" class="cancel-button">Cancel</button>
@@ -139,10 +129,7 @@ onMounted(() => {
           </div>
 
           <div style="display: flex; gap: 20px">
-            <div
-              class="info-card"
-              v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime"
-            >
+            <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
               <u>
                 <h2>Time</h2>
               </u>
@@ -174,10 +161,7 @@ onMounted(() => {
             </ol>
           </div>
 
-          <div
-            class="info-card"
-            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent"
-          >
+          <div class="info-card" v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
             <u>
               <h2>Nutrition (per serving)</h2>
             </u>
@@ -341,7 +325,6 @@ onMounted(() => {
   cursor: pointer;
   transition: background-color 0.3s;
   flex: 1;
-  /* Equal width with cancel button */
 }
 
 .bookmark-button:hover {
@@ -358,7 +341,6 @@ onMounted(() => {
   cursor: pointer;
   transition: background-color 0.3s;
   flex: 1;
-  /* Equal width with bookmark button */
 }
 
 .cancel-button:hover {
