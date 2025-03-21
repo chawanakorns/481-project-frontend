@@ -9,7 +9,6 @@ const filteredRecipes = ref<any[]>([])
 const searchTerm = ref('')
 const correctedQuery = ref<string | null>(null)
 const originalQuery = ref<string | null>(null)
-const suggestions = ref<string[]>([])
 const imageLoadError = ref<{ [key: string]: boolean }>({})
 const selectedRecipe = ref<any | null>(null)
 const showModal = ref(false)
@@ -47,7 +46,6 @@ const filterRecipes = async () => {
     filteredRecipes.value = response.data.recipes
     originalQuery.value = response.data.original_query
     correctedQuery.value = response.data.corrected_query
-    suggestions.value = response.data.suggestions
     totalPages.value = response.data.total_pages
     totalResults.value = response.data.total_results
     currentPage.value = response.data.current_page
@@ -148,14 +146,8 @@ onMounted(() => {
     </div>
 
     <div v-if="correctedQuery && correctedQuery !== originalQuery" class="spell-suggestion">
-      Did you mean: <strong>{{ correctedQuery }}</strong>?
-    </div>
-    <div v-if="suggestions.length" class="suggestions">
-      Suggestions:
-      <span v-for="(suggestion, index) in suggestions" :key="index">
-        <a href="#" @click.prevent="useSuggestion(suggestion)">{{ suggestion }}</a>
-        <span v-if="index < suggestions.length - 1">, </span>
-      </span>
+      Did you mean:<a href="#" @click.prevent="useSuggestion(correctedQuery)"><strong>{{ correctedQuery
+      }}</strong></a>?
     </div>
 
     <div class="item">
@@ -231,29 +223,23 @@ onMounted(() => {
 }
 
 .spell-suggestion {
-  margin-top: 10px;
+  margin-bottom: 20px;
   font-size: 14px;
   color: #666;
 }
 
-.suggestions {
-  margin-top: 10px;
-  margin-bottom: 20px;
+.spell-suggestion a {
   font-size: 14px;
-  color: #333;
-}
-
-.suggestions a {
   color: #007bff;
   text-decoration: none;
 }
 
-.suggestions a:hover {
+.spell_suggestion a:hover {
   text-decoration: underline;
 }
 
 .title {
-  text-align: left;
+  text-align: center;
   width: 100%;
   padding-left: 20px;
   margin-top: 20px;
@@ -321,7 +307,7 @@ onMounted(() => {
 }
 
 .item-card {
-  width: 300px;
+  width: 100%;
   text-align: center;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   transition: 0.3s;

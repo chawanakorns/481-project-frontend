@@ -79,7 +79,10 @@ onMounted(() => {
 
 <template>
   <div class="modal-container">
-    <p v-if="feedbackMessage" :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'">
+    <p
+      v-if="feedbackMessage"
+      :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'"
+    >
       {{ feedbackMessage }}
     </p>
 
@@ -93,8 +96,16 @@ onMounted(() => {
 
       <div class="recipe-content">
         <div class="recipe-image">
-          <img :src="localRecipe.image_url" class="main-image" @error="handleImageError(localRecipe.RecipeId)" />
-          <button v-if="!showBookmarkSection" @click="toggleBookmarkSection" class="toggle-bookmark-button">
+          <img
+            :src="localRecipe.image_url"
+            class="main-image"
+            @error="handleImageError(localRecipe.RecipeId)"
+          />
+          <button
+            v-if="!showBookmarkSection"
+            @click="toggleBookmarkSection"
+            class="toggle-bookmark-button"
+          >
             Bookmark
           </button>
           <div class="info-card bookmark-section" v-if="showBookmarkSection">
@@ -104,7 +115,14 @@ onMounted(() => {
                 {{ folder.Name }}
               </option>
             </select>
-            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
+            <input
+              v-model="rating"
+              type="number"
+              min="1"
+              max="5"
+              placeholder="Rate 1-5"
+              class="rating-input"
+            />
             <div class="bookmark-actions">
               <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
               <button @click="toggleBookmarkSection" class="cancel-button">Cancel</button>
@@ -120,8 +138,11 @@ onMounted(() => {
             <p>{{ localRecipe.Description || 'No description available.' }}</p>
           </div>
 
-          <div style="display: flex; gap: 20px;">
-            <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
+          <div style="display: flex; gap: 20px">
+            <div
+              class="info-card"
+              v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime"
+            >
               <u>
                 <h2>Time</h2>
               </u>
@@ -147,11 +168,16 @@ onMounted(() => {
               <h2>Instructions</h2>
             </u>
             <ol>
-              <li v-for="(step, index) in localRecipe.RecipeInstructions" :key="index">{{ step }}</li>
+              <li v-for="(step, index) in localRecipe.RecipeInstructions" :key="index">
+                {{ step }}
+              </li>
             </ol>
           </div>
 
-          <div class="info-card" v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
+          <div
+            class="info-card"
+            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent"
+          >
             <u>
               <h2>Nutrition (per serving)</h2>
             </u>
@@ -246,7 +272,9 @@ onMounted(() => {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
 }
 
 .info-card h2 {

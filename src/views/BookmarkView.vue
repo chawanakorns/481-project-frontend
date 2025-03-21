@@ -31,7 +31,7 @@ const toggleEditingFolder = (folderId: number) => {
       editingFolderId.value = null
       editedFolderName.value = ''
     }
-    bookmarks.value[folderId]?.forEach(bookmark => {
+    bookmarks.value[folderId]?.forEach((bookmark) => {
       editingRating.value[bookmark.BookmarkId] = false
     })
   }
@@ -47,7 +47,12 @@ const createFolder = async () => {
       user_id: userId.value,
       name: newFolderName.value.trim(),
     })
-    folders.value.push({ FolderId: response.data.folder_id, UserId: userId.value, Name: newFolderName.value.trim(), AvgRating: null })
+    folders.value.push({
+      FolderId: response.data.folder_id,
+      UserId: userId.value,
+      Name: newFolderName.value.trim(),
+      AvgRating: null,
+    })
     newFolderName.value = ''
     await fetchFoldersAndBookmarks()
     errorMessage.value = ''
@@ -67,7 +72,9 @@ const saveEdit = async (folderId: number) => {
     return
   }
   try {
-    await axios.put(`http://localhost:5000/folders/${folderId}`, { name: editedFolderName.value.trim() })
+    await axios.put(`http://localhost:5000/folders/${folderId}`, {
+      name: editedFolderName.value.trim(),
+    })
     const folder = folders.value.find((f) => f.FolderId === folderId)
     if (folder) folder.Name = editedFolderName.value.trim()
     editingFolderId.value = null
@@ -97,7 +104,7 @@ const deleteFolder = async (folderId: number) => {
 const deleteBookmark = async (folderId: number, bookmarkId: number) => {
   try {
     await axios.delete(`http://localhost:5000/bookmarks/${bookmarkId}`)
-    bookmarks.value[folderId] = bookmarks.value[folderId].filter(b => b.BookmarkId !== bookmarkId)
+    bookmarks.value[folderId] = bookmarks.value[folderId].filter((b) => b.BookmarkId !== bookmarkId)
     await fetchFoldersAndBookmarks()
     errorMessage.value = ''
   } catch (error) {
@@ -112,7 +119,7 @@ const startEditingRating = (bookmarkId: number) => {
 const saveRating = async (folderId: number, bookmarkId: number, newRating: number) => {
   try {
     await axios.put(`http://localhost:5000/bookmarks/${bookmarkId}/rating`, { rating: newRating })
-    const bookmark = bookmarks.value[folderId].find(b => b.BookmarkId === bookmarkId)
+    const bookmark = bookmarks.value[folderId].find((b) => b.BookmarkId === bookmarkId)
     if (bookmark) bookmark.Rating = newRating
     editingRating.value[bookmarkId] = false
     await fetchFoldersAndBookmarks()
@@ -140,8 +147,10 @@ const onDrop = async (event: DragEvent, toFolderId: number) => {
 
   try {
     await axios.put(`http://localhost:5000/bookmarks/${bookmarkId}`, { folder_id: toFolderId })
-    const bookmark = bookmarks.value[fromFolderId].find(b => b.BookmarkId === bookmarkId)
-    bookmarks.value[fromFolderId] = bookmarks.value[fromFolderId].filter(b => b.BookmarkId !== bookmarkId)
+    const bookmark = bookmarks.value[fromFolderId].find((b) => b.BookmarkId === bookmarkId)
+    bookmarks.value[fromFolderId] = bookmarks.value[fromFolderId].filter(
+      (b) => b.BookmarkId !== bookmarkId,
+    )
     if (!bookmarks.value[toFolderId]) bookmarks.value[toFolderId] = []
     bookmarks.value[toFolderId].push({ ...bookmark, FolderId: toFolderId })
     await fetchFoldersAndBookmarks()
@@ -167,58 +176,126 @@ onActivated(fetchFoldersAndBookmarks)
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
     <div class="create-folder">
-      <input v-model="newFolderName" type="text" placeholder="New folder name" class="folder-input"
-        @keyup.enter="createFolder" />
+      <input
+        v-model="newFolderName"
+        type="text"
+        placeholder="New folder name"
+        class="folder-input"
+        @keyup.enter="createFolder"
+      />
       <button @click="createFolder" class="create-button">Create Folder</button>
     </div>
 
     <div class="folder-list">
-      <div v-for="folder in folders" :key="folder.FolderId" class="folder-card"
-        :class="{ 'draggable-target': editingFolder[folder.FolderId] }" @drop="onDrop($event, folder.FolderId)"
-        @dragover="onDragOver($event)">
-        <div v-if="editingFolderId === folder.FolderId && editingFolder[folder.FolderId]" class="edit-mode">
-          <input v-model="editedFolderName" type="text" class="folder-input" @keyup.enter="saveEdit(folder.FolderId)" />
+      <div
+        v-for="folder in folders"
+        :key="folder.FolderId"
+        class="folder-card"
+        :class="{ 'draggable-target': editingFolder[folder.FolderId] }"
+        @drop="onDrop($event, folder.FolderId)"
+        @dragover="onDragOver($event)"
+      >
+        <div
+          v-if="editingFolderId === folder.FolderId && editingFolder[folder.FolderId]"
+          class="edit-mode"
+        >
+          <input
+            v-model="editedFolderName"
+            type="text"
+            class="folder-input"
+            @keyup.enter="saveEdit(folder.FolderId)"
+          />
           <button @click="saveEdit(folder.FolderId)" class="save-button">Save</button>
           <button @click="cancelEdit" class="cancel-button">Cancel</button>
         </div>
         <div v-else class="folder-content">
-          <h3 class="folder-name">{{ folder.Name }} <br> <i>({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg:
-              {{
-                folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})</i></h3>
+          <h3 class="folder-name">
+            {{ folder.Name }} <br />
+            <i
+              >({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg:
+              {{ folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})</i
+            >
+          </h3>
           <div class="folder-actions">
-            <button v-if="editingFolder[folder.FolderId]" @click="deleteFolder(folder.FolderId)"
-              class="delete-button">Delete</button>
-            <button v-if="editingFolder[folder.FolderId]" @click="startEditing(folder)" class="edit-button">Edit
-              Name</button>
+            <button
+              v-if="editingFolder[folder.FolderId]"
+              @click="deleteFolder(folder.FolderId)"
+              class="delete-button"
+            >
+              Delete
+            </button>
+            <button
+              v-if="editingFolder[folder.FolderId]"
+              @click="startEditing(folder)"
+              class="edit-button"
+            >
+              Edit Name
+            </button>
             <button @click="toggleEditingFolder(folder.FolderId)" class="toggle-edit-button">
               {{ editingFolder[folder.FolderId] ? 'Done' : 'Edit' }}
             </button>
           </div>
         </div>
         <div class="bookmarks-list">
-          <div v-if="bookmarks[folder.FolderId] && bookmarks[folder.FolderId].length > 0" class="bookmark-items">
-            <div v-for="bookmark in bookmarks[folder.FolderId]" :key="bookmark.BookmarkId" class="bookmark-item"
+          <div
+            v-if="bookmarks[folder.FolderId] && bookmarks[folder.FolderId].length > 0"
+            class="bookmark-items"
+          >
+            <div
+              v-for="bookmark in bookmarks[folder.FolderId]"
+              :key="bookmark.BookmarkId"
+              class="bookmark-item"
               :draggable="editingFolder[folder.FolderId]"
-              @dragstart="editingFolder[folder.FolderId] ? onDragStart($event, bookmark.BookmarkId, folder.FolderId) : null">
+              @dragstart="
+                editingFolder[folder.FolderId]
+                  ? onDragStart($event, bookmark.BookmarkId, folder.FolderId)
+                  : null
+              "
+            >
               <div class="bookmark-content">
                 <img :src="bookmark.image_url" class="bookmark-image" />
                 <div class="bookmark-info">
                   <p class="bookmark-name">{{ bookmark.Name }}</p>
-                  <div v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]" class="rating-edit">
-                    <input v-model.number="bookmark.Rating" type="number" min="1" max="5" class="rating-input" />
-                    <button @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
-                      class="save-rating">Save</button>
-                    <button @click="cancelEditingRating(bookmark.BookmarkId)" class="cancel-rating">Cancel</button>
+                  <div
+                    v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]"
+                    class="rating-edit"
+                  >
+                    <input
+                      v-model.number="bookmark.Rating"
+                      type="number"
+                      min="1"
+                      max="5"
+                      class="rating-input"
+                    />
+                    <button
+                      @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
+                      class="save-rating"
+                    >
+                      Save
+                    </button>
+                    <button @click="cancelEditingRating(bookmark.BookmarkId)" class="cancel-rating">
+                      Cancel
+                    </button>
                   </div>
                   <p v-else class="bookmark-rating">
                     Rating: {{ bookmark.Rating }} / 5
-                    <button v-if="editingFolder[folder.FolderId]" @click="startEditingRating(bookmark.BookmarkId)"
-                      class="edit-rating">Edit</button>
+                    <button
+                      v-if="editingFolder[folder.FolderId]"
+                      @click="startEditingRating(bookmark.BookmarkId)"
+                      class="edit-rating"
+                    >
+                      Edit
+                    </button>
                   </p>
                 </div>
               </div>
-              <button v-if="editingFolder[folder.FolderId]"
-                @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)" class="delete-bookmark-button">X</button>
+              <button
+                v-if="editingFolder[folder.FolderId]"
+                @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)"
+                class="delete-bookmark-button"
+              >
+                X
+              </button>
             </div>
           </div>
           <p v-else class="placeholder">No bookmarks yet</p>
@@ -446,7 +523,7 @@ onActivated(fetchFoldersAndBookmarks)
   height: 120px;
 }
 
-.bookmark-item[draggable="true"] {
+.bookmark-item[draggable='true'] {
   cursor: move;
 }
 
