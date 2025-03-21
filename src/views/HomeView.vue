@@ -132,10 +132,10 @@ onMounted(async () => {
         <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
-            <b>{{ recipe.Name }}</b>
+            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) + '' : 'Name not loaded' }}</b>
           </h4>
           <p class="preview">
-            {{ recipe.Description ? recipe.Description.substring(0, 50) + '...' : 'No description' }}
+            {{ recipe.Description ? recipe.Description.substring(0, 38) + '...' : 'No description' }}
           </p>
         </div>
       </div>
@@ -158,7 +158,7 @@ onMounted(async () => {
 
     <div v-if="correctedQuery && correctedQuery !== originalQuery" class="spell-suggestion">
       Did you mean:<a href="#" @click.prevent="useSuggestion(correctedQuery)"><strong>{{ correctedQuery
-          }}</strong></a>?
+      }}</strong></a>?
     </div>
 
     <div class="item">
@@ -166,10 +166,10 @@ onMounted(async () => {
         <img :src="recipe.image_url" class="card-image" @error="handleImageError(recipe.RecipeId)" />
         <div class="card-container">
           <h4>
-            <b>{{ recipe.Name ? recipe.Name.substring(0, 38) + '' : 'Name not loaded' }}</b>
+            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) + '' : 'Name not loaded' }}</b>
           </h4>
           <p class="preview">
-            {{ recipe.Description ? recipe.Description.substring(0, 42) + '...' : 'No description' }}
+            {{ recipe.Description ? recipe.Description.substring(0, 38) + '...' : 'No description' }}
           </p>
         </div>
       </div>
@@ -273,6 +273,7 @@ onMounted(async () => {
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  gap: 20px;
 }
 
 .recommendation::-webkit-scrollbar {
@@ -290,7 +291,7 @@ onMounted(async () => {
 
 .recommendation-card {
   width: 300px;
-  height: 300px;
+  height: 280px;
   text-align: center;
   margin: 20px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
@@ -305,6 +306,8 @@ onMounted(async () => {
 
 .item {
   display: grid;
+  padding-left: 10px;
+  padding-right: 10px;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   width: 100%;
@@ -317,8 +320,9 @@ onMounted(async () => {
 }
 
 .item-card {
-  width: 100%;
-  height: 100%;
+  width: 300px;
+  height: 280px;
+  margin: 20px;
   text-align: center;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   transition: 0.3s;
