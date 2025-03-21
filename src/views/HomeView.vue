@@ -33,7 +33,7 @@ const filterRecipes = () => {
       return (
         recipe.Name.toLowerCase().includes(lowercasedSearchTerm) ||
         recipe.Description.toLowerCase().includes(lowercasedSearchTerm) ||
-        (recipe.Keywords && recipe.Keywords.toLowerCase().includes(lowercasedSearchTerm))
+        (recipe.Keywords && recipe.Keywords.some((kw: string) => kw.toLowerCase().includes(lowercasedSearchTerm)))
       )
     })
   }
@@ -283,7 +283,7 @@ onMounted(fetchRecipes)
 
 .modal-content {
   background: #fff;
-  padding: 40px;
+  padding: 60px;
   border-radius: 8px;
   max-width: 90%;
   max-height: 90vh;

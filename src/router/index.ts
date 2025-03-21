@@ -37,10 +37,7 @@ const router = createRouter({
       path: '/detail/:id',
       name: 'detail',
       component: DetailView,
-      props: (route) => ({
-        id: route.params.id,
-        recipe: route.params.recipe,
-      }),
+      props: true, // Pass route params as props, recipe will be undefined if not provided
     },
     {
       path: '/bookmarks',
