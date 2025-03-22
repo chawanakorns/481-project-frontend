@@ -1,18 +1,13 @@
-<!-- eslint-disable @typescript-eslint/no-explicit-any -->
-<!-- HomeView.vue -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 import DetailView from '@/views/DetailView.vue'
-
-// Import the local placeholder image
 import placeholderImage from '@/assets/placeholder.jpg'
 
-// Placeholder image (use the imported image)
 const PLACEHOLDER_IMAGE = placeholderImage
 
-const userId = ref(1) // Replace with actual auth logic later
+const userId = ref(1)
 const filteredRecipes = ref<any[]>([])
 const searchTerm = ref('')
 const correctedQuery = ref<string | null>(null)
@@ -27,10 +22,8 @@ const totalResults = ref(0)
 const recommendedRecipes = ref<any[]>([])
 const recommendationMessage = ref<string>('')
 
-// Number of items per carousel slide (matches search section's lg breakpoint)
 const itemsPerSlide = 4
 
-// Compute grouped recommendations for carousel
 const groupedRecommendations = computed(() => {
   const groups = []
   for (let i = 0; i < recommendedRecipes.value.length; i += itemsPerSlide) {
@@ -83,18 +76,12 @@ const useSuggestion = async (suggestion: string) => {
 
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
-  const recipe =
-    filteredRecipes.value.find((r) => r.RecipeId === recipeId) ||
-    recommendedRecipes.value.find((r) => r.RecipeId === recipeId)
-  if (recipe) {
-    recipe.image_url = PLACEHOLDER_IMAGE // Fallback for invalid URLs
-  }
+  const recipe = filteredRecipes.value.find((r) => r.RecipeId === recipeId) || recommendedRecipes.value.find((r) => r.RecipeId === recipeId)
+  if (recipe) recipe.image_url = PLACEHOLDER_IMAGE
 }
 
 const getImageUrl = (recipe: any) => {
-  return recipe.image_url && recipe.image_url !== 'character(0)'
-    ? recipe.image_url
-    : PLACEHOLDER_IMAGE
+  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
 }
 
 const openModal = (recipe: any) => {
@@ -112,11 +99,14 @@ const fetchRecommendedRecipes = async () => {
     const response = await axios.get('http://localhost:5000/recommendations', {
       params: {
         user_id: userId.value,
-        limit: 12,
-      },
+        limit: 12
+      }
     })
     recommendedRecipes.value = response.data.recommendations
     recommendationMessage.value = response.data.message || ''
+    if (recommendedRecipes.value.length === 0) {
+      recommendationMessage.value = recommendationMessage.value || 'No new recommendations available. Explore more recipes!'
+    }
   } catch (error) {
     console.error('Error fetching recommended recipes:', error)
     recommendedRecipes.value = []
@@ -127,11 +117,8 @@ const fetchRecommendedRecipes = async () => {
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
-    if (searchTerm.value.trim()) {
-      filterRecipes()
-    } else {
-      fetchRecipes()
-    }
+    if (searchTerm.value.trim()) filterRecipes()
+    else fetchRecipes()
   }
 }
 
@@ -150,7 +137,6 @@ onMounted(async () => {
 
     <div class="recommendation-container mb-5 px-2 py-3">
       <div id="recommendationCarousel" class="carousel slide">
-        <!-- Carousel Indicators (Bullets) -->
         <div class="carousel-indicators" v-if="groupedRecommendations.length > 1">
           <button v-for="(group, index) in groupedRecommendations" :key="index" type="button"
             :data-bs-target="'#recommendationCarousel'" :data-bs-slide-to="index" :class="{ 'active': index === 0 }"
@@ -210,7 +196,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="correctedQuery && correctedQuery !== originalQuery" class="alert alert-info text-center mb-4">
+    <div v-if="correctedQuery && correctedQuery !== originalQuery" class="text-center mb-4">
       Did you mean: <a href="#" @click.prevent="useSuggestion(correctedQuery)" class="fw-bold">{{ correctedQuery }}</a>?
     </div>
 
@@ -312,7 +298,6 @@ onMounted(async () => {
   background-color: #ccc;
 }
 
-/* Modal-specific styles */
 .modal {
   pointer-events: none;
 }
@@ -326,7 +311,6 @@ onMounted(async () => {
   opacity: 0.5;
 }
 
-/* Customized circular carousel controls */
 .carousel-control-prev,
 .carousel-control-next {
   width: 40px;
@@ -336,9 +320,7 @@ onMounted(async () => {
   background-color: #007bff;
   border-radius: 50%;
   opacity: 0.8;
-  transition:
-    opacity 0.3s,
-    background-color 0.3s;
+  transition: opacity 0.3s, background-color 0.3s;
 }
 
 .carousel-control-prev:hover,
@@ -366,7 +348,6 @@ onMounted(async () => {
 .carousel-indicators {
   position: absolute;
   bottom: -40px;
-  /* Position below the carousel */
   left: 50%;
   transform: translateX(-50%);
   padding: 0;
