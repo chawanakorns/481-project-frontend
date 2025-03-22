@@ -1,56 +1,88 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import axios from 'axios'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
-const username = ref('')
-const password = ref('')
-const msg = 'Register for an Account' // You can customize this message
+const username = ref('');
+const password = ref('');
+const msg = 'Register for an Account';
+const errorMsg = ref('');
+
+const router = useRouter();
+const authStore = useAuthStore();
 
 const handleSubmit = async () => {
   try {
-    const response = await axios.post('http://localhost:5000/register', {
-      username: username.value,
-      password: password.value,
-    })
-    alert(response.data.message) // Display success message
+    const response = await authStore.register(username.value, password.value);
+    alert(response.message);
+    router.push('/login');
   } catch (error) {
-    alert(error.response.data.message) // Display error message
+    errorMsg.value = (error as Error).message;
   }
-}
+};
 </script>
 
 <template>
-  <div class="register">
-    <form @submit.prevent="handleSubmit">
-      <div class="container">
-        <h1 class="green">{{ msg }}</h1>
+  <div class="register min-vh-100 d-flex align-items-center">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm">
+            <div class="card-body p-5">
+              <h1 class="text-center text-success mb-4 h3">{{ msg }}</h1>
 
-        <label><b>Username</b></label>
-        <input v-model="username" type="text" required />
+              <!-- Error message -->
+              <div v-if="errorMsg" class="alert alert-danger" role="alert">
+                {{ errorMsg }}
+              </div>
 
-        <label><b>Password</b></label>
-        <input v-model="password" type="password" required />
+              <!-- Form -->
+              <form @submit.prevent="handleSubmit">
+                <!-- Username -->
+                <div class="mb-3">
+                  <label for="username" class="form-label fw-bold">Username</label>
+                  <input v-model="username" type="text" id="username" class="form-control"
+                    placeholder="Enter your username" required />
+                </div>
 
-        <button type="submit">Sign Up</button>
+                <!-- Password -->
+                <div class="mb-3">
+                  <label for="password" class="form-label fw-bold">Password</label>
+                  <input v-model="password" type="password" id="password" class="form-control"
+                    placeholder="Enter your password" required />
+                </div>
 
-        <div>
-          <label>Already have an account?</label>
-          <router-link to="/login">Login</router-link>
+                <!-- Submit Button -->
+                <div class="d-grid mb-3">
+                  <button type="submit" class="btn btn-success">Sign Up</button>
+                </div>
+
+                <!-- Login Link -->
+                <div class="text-center">
+                  <span>Already have an account? </span>
+                  <router-link to="/login" class="text-primary text-decoration-none fw-bold">
+                    Login
+                  </router-link>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
 <style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
+.register {
+  background-color: #f8f9fa;
 }
 
-h3 {
-  font-size: 1.2rem;
+.card {
+  border-radius: 10px;
+}
+
+.btn-success:hover {
+  background-color: #218838;
 }
 </style>

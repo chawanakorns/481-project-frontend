@@ -1,74 +1,88 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import axios from 'axios'
-import { useRouter } from 'vue-router' // For navigation after successful login
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
-const username = ref('')
-const password = ref('')
-const msg = 'Login to Your Account' // Customizable message
-const errorMsg = ref('') // To show error message if login fails
+const username = ref('');
+const password = ref('');
+const msg = 'Login to Your Account';
+const errorMsg = ref('');
 
-const router = useRouter() // To handle routing after successful login
+const router = useRouter();
+const authStore = useAuthStore();
 
 const handleSubmit = async () => {
   try {
-    const response = await axios.post('http://localhost:5000/login', {
-      username: username.value,
-      password: password.value,
-    })
-    alert(response.data.message) // Display success message
-    router.push('/home') // Redirect to the home page after successful login
+    const response = await authStore.login(username.value, password.value);
+    alert(response.message);
+    router.push('/home');
   } catch (error) {
-    if (error.response) {
-      errorMsg.value = error.response.data.message // Set error message from backend
-    } else {
-      errorMsg.value = 'An unexpected error occurred.' // Fallback error message
-    }
+    errorMsg.value = (error as Error).message;
   }
-}
+};
 </script>
 
 <template>
-  <div class="login">
-    <form @submit.prevent="handleSubmit">
-      <div class="container">
-        <h1 class="green">{{ msg }}</h1>
+  <div class="login min-vh-100 d-flex align-items-center">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm">
+            <div class="card-body p-5">
+              <h1 class="text-center text-success mb-4 h3">{{ msg }}</h1>
 
-        <!-- Display error message if any -->
-        <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+              <!-- Error message -->
+              <div v-if="errorMsg" class="alert alert-danger" role="alert">
+                {{ errorMsg }}
+              </div>
 
-        <label><b>Username</b></label>
-        <input v-model="username" type="text" required />
+              <!-- Form -->
+              <form @submit.prevent="handleSubmit">
+                <!-- Username -->
+                <div class="mb-3">
+                  <label for="username" class="form-label fw-bold">Username</label>
+                  <input v-model="username" type="text" id="username" class="form-control"
+                    placeholder="Enter your username" required />
+                </div>
 
-        <label><b>Password</b></label>
-        <input v-model="password" type="password" required />
+                <!-- Password -->
+                <div class="mb-3">
+                  <label for="password" class="form-label fw-bold">Password</label>
+                  <input v-model="password" type="password" id="password" class="form-control"
+                    placeholder="Enter your password" required />
+                </div>
 
-        <button type="submit">Login</button>
+                <!-- Submit Button -->
+                <div class="d-grid mb-3">
+                  <button type="submit" class="btn btn-success">Login</button>
+                </div>
 
-        <div>
-          <label>Don't have an account?</label>
-          <router-link to="/register">Register</router-link>
+                <!-- Register Link -->
+                <div class="text-center">
+                  <span>Don't have an account? </span>
+                  <router-link to="/register" class="text-primary text-decoration-none fw-bold">
+                    Register
+                  </router-link>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
 <style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
+.login {
+  background-color: #f8f9fa;
 }
 
-h3 {
-  font-size: 1.2rem;
+.card {
+  border-radius: 10px;
 }
 
-.error {
-  color: red;
-  font-size: 1rem;
-  margin-top: 10px;
+.btn-success:hover {
+  background-color: #218838;
 }
 </style>

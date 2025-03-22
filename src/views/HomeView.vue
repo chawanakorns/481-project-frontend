@@ -1,137 +1,174 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
-import NavigationBar from '@/components/NavigationBar.vue'
-import DetailView from '@/views/DetailView.vue'
-import placeholderImage from '@/assets/placeholder.jpg'
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import api from '@/stores/api'; // Use the API client instead of axios directly
+import { useAuthStore } from '@/stores/auth'; // Use the auth store for token management
+import NavigationBar from '@/components/NavigationBar.vue';
+import DetailView from '@/views/DetailView.vue';
+import placeholderImage from '@/assets/placeholder.jpg';
 
-const PLACEHOLDER_IMAGE = placeholderImage
+const PLACEHOLDER_IMAGE = placeholderImage;
 
-const userId = ref(1)
-const filteredRecipes = ref<any[]>([])
-const searchTerm = ref('')
-const correctedQuery = ref<string | null>(null)
-const originalQuery = ref<string | null>(null)
-const imageLoadError = ref<{ [key: string]: boolean }>({})
-const selectedRecipe = ref<any | null>(null)
-const showModal = ref(false)
-const currentPage = ref(1)
-const itemsPerPage = 20
-const totalPages = ref(1)
-const totalResults = ref(0)
-const recommendedRecipes = ref<any[]>([])
-const recommendationMessage = ref<string>('')
+const router = useRouter();
+const authStore = useAuthStore();
 
-const itemsPerSlide = 4
+const userId = ref(localStorage.getItem('user_id') || '1'); // Get userId from localStorage
+const filteredRecipes = ref<any[]>([]);
+const searchTerm = ref('');
+const correctedQuery = ref<string | null>(null);
+const originalQuery = ref<string | null>(null);
+const imageLoadError = ref<{ [key: string]: boolean }>({});
+const selectedRecipe = ref<any | null>(null);
+const showModal = ref(false);
+const currentPage = ref(1);
+const itemsPerPage = 20;
+const totalPages = ref(1);
+const totalResults = ref(0);
+const recommendedRecipes = ref<any[]>([]);
+const recommendationMessage = ref<string>('');
+const error = ref<string | null>(null); // Add error state for UI feedback
+
+const itemsPerSlide = 4;
 
 const groupedRecommendations = computed(() => {
-  const groups = []
+  const groups = [];
   for (let i = 0; i < recommendedRecipes.value.length; i += itemsPerSlide) {
-    groups.push(recommendedRecipes.value.slice(i, i + itemsPerSlide))
+    groups.push(recommendedRecipes.value.slice(i, i + itemsPerSlide));
   }
-  return groups
-})
+  return groups;
+});
 
 const fetchRecipes = async () => {
   try {
-    const response = await axios.get('http://localhost:5000/recipes', {
+    const response = await api.getRecipes({
       params: {
         limit: itemsPerPage,
         page: currentPage.value,
       },
-    })
-    filteredRecipes.value = response.data.recipes
-    totalPages.value = response.data.total_pages
-    totalResults.value = response.data.total_results
-  } catch (error) {
-    console.error('Error fetching recipes:', error)
+    });
+    filteredRecipes.value = response.recipes;
+    totalPages.value = response.total_pages;
+    totalResults.value = response.total_results;
+    error.value = null; // Clear any previous errors
+  } catch (err) {
+    console.error('Error fetching recipes:', err);
+    error.value = 'Failed to load recipes. Please try again later.';
+    if (err instanceof Error && (err as any).response && (err as any).response.status === 401) {
+      authStore.logout();
+      router.push('/login');
+    }
   }
-}
+};
 
 const filterRecipes = async () => {
   try {
-    const response = await axios.get('http://localhost:5000/recipes', {
+    const response = await api.getRecipes({
       params: {
         search: searchTerm.value.trim(),
         limit: itemsPerPage,
         page: currentPage.value,
       },
-    })
-    filteredRecipes.value = response.data.recipes
-    originalQuery.value = response.data.original_query
-    correctedQuery.value = response.data.corrected_query
-    totalPages.value = response.data.total_pages
-    totalResults.value = response.data.total_results
-    currentPage.value = response.data.current_page
-  } catch (error) {
-    console.error('Error filtering recipes:', error)
+    });
+    filteredRecipes.value = response.recipes;
+    originalQuery.value = response.original_query;
+    correctedQuery.value = response.corrected_query;
+    totalPages.value = response.total_pages;
+    totalResults.value = response.total_results;
+    currentPage.value = response.current_page;
+    error.value = null; // Clear any previous errors
+  } catch (err) {
+    console.error('Error filtering recipes:', err);
+    error.value = 'Failed to filter recipes. Please try again.';
+    if ((err as any).response && (err as any).response.status === 401) {
+      authStore.logout();
+      router.push('/login');
+    }
   }
-}
+};
 
 const useSuggestion = async (suggestion: string) => {
-  searchTerm.value = suggestion
-  currentPage.value = 1
-  await filterRecipes()
-}
+  searchTerm.value = suggestion;
+  currentPage.value = 1;
+  await filterRecipes();
+};
 
 const handleImageError = (recipeId: number) => {
-  imageLoadError.value[recipeId] = true
-  const recipe = filteredRecipes.value.find((r) => r.RecipeId === recipeId) || recommendedRecipes.value.find((r) => r.RecipeId === recipeId)
-  if (recipe) recipe.image_url = PLACEHOLDER_IMAGE
-}
+  imageLoadError.value[recipeId] = true;
+  const recipe =
+    filteredRecipes.value.find((r) => r.RecipeId === recipeId) ||
+    recommendedRecipes.value.find((r) => r.RecipeId === recipeId);
+  if (recipe) recipe.image_url = PLACEHOLDER_IMAGE;
+};
 
 const getImageUrl = (recipe: any) => {
-  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
-}
+  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE;
+};
 
 const openModal = (recipe: any) => {
-  selectedRecipe.value = recipe
-  showModal.value = true
-}
+  selectedRecipe.value = recipe;
+  showModal.value = true;
+};
 
 const closeModal = () => {
-  showModal.value = false
-  selectedRecipe.value = null
-}
+  showModal.value = false;
+  selectedRecipe.value = null;
+};
 
 const fetchRecommendedRecipes = async () => {
   try {
-    const response = await axios.get('http://localhost:5000/recommendations', {
+    const response = await api.getRecommendations({
       params: {
         user_id: userId.value,
-        limit: 12
-      }
-    })
-    recommendedRecipes.value = response.data.recommendations
-    recommendationMessage.value = response.data.message || ''
+        limit: 12,
+      },
+    });
+    recommendedRecipes.value = response.recommendations;
+    recommendationMessage.value = response.message || '';
     if (recommendedRecipes.value.length === 0) {
-      recommendationMessage.value = recommendationMessage.value || 'No new recommendations available. Explore more recipes!'
+      recommendationMessage.value =
+        recommendationMessage.value || 'No new recommendations available. Explore more recipes!';
     }
-  } catch (error) {
-    console.error('Error fetching recommended recipes:', error)
-    recommendedRecipes.value = []
-    recommendationMessage.value = 'Failed to load recommendations.'
+    error.value = null; // Clear any previous errors
+  } catch (err) {
+    console.error('Error fetching recommended recipes:', err);
+    recommendedRecipes.value = [];
+    recommendationMessage.value = 'Failed to load recommendations.';
+    if ((err as any).response && (err as any).response.status === 401) {
+      authStore.logout();
+      router.push('/login');
+    }
   }
-}
+};
 
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-    if (searchTerm.value.trim()) filterRecipes()
-    else fetchRecipes()
+    currentPage.value = page;
+    if (searchTerm.value.trim()) filterRecipes();
+    else fetchRecipes();
   }
-}
+};
 
 onMounted(async () => {
-  await fetchRecipes()
-  await fetchRecommendedRecipes()
-})
+  // Check if the user is authenticated
+  if (!authStore.isAuthenticated()) {
+    router.push('/login');
+    return;
+  }
+
+  await fetchRecipes();
+  await fetchRecommendedRecipes();
+});
 </script>
 
 <template>
   <NavigationBar />
   <div class="container mt-5 mb-5 pt-5 pb-5">
+    <!-- Display error message if any -->
+    <div v-if="error" class="alert alert-danger text-center" role="alert">
+      {{ error }}
+    </div>
+
     <div class="text-start mb-4">
       <h1 class="display-5 fw-bold">You may like these</h1>
     </div>
@@ -141,8 +178,7 @@ onMounted(async () => {
         <div class="carousel-indicators" v-if="groupedRecommendations.length > 1">
           <button v-for="(group, index) in groupedRecommendations" :key="index" type="button"
             :data-bs-target="'#recommendationCarousel'" :data-bs-slide-to="index" :class="{ 'active': index === 0 }"
-            aria-current="true" :aria-label="'Slide ' + (index + 1)">
-          </button>
+            aria-current="true" :aria-label="'Slide ' + (index + 1)"></button>
         </div>
 
         <div class="carousel-inner">
@@ -159,12 +195,22 @@ onMounted(async () => {
                   <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
                   <div class="card-body text-start">
                     <h5 class="card-title fw-bold">
-                      {{ recipe.Name ? (recipe.Name.length > 20 ? recipe.Name.substring(0, 25) + '...' : recipe.Name) :
-                        'Name not loaded' }}
+                      {{
+                        recipe.Name
+                          ? recipe.Name.length > 20
+                            ? recipe.Name.substring(0, 25) + '...'
+                            : recipe.Name
+                          : 'Name not loaded'
+                      }}
                     </h5>
                     <p class="card-text text-muted">
-                      {{ recipe.Description ? (recipe.Description.length > 20 ? recipe.Description.substring(0, 28) +
-                        '...' : recipe.Description) : 'No description' }}
+                      {{
+                        recipe.Description
+                          ? recipe.Description.length > 20
+                            ? recipe.Description.substring(0, 28) + '...'
+                            : recipe.Description
+                          : 'No description'
+                      }}
                     </p>
                   </div>
                 </div>
@@ -198,7 +244,8 @@ onMounted(async () => {
     </div>
 
     <div v-if="correctedQuery && correctedQuery !== originalQuery" class="text-center mb-4">
-      Did you mean: <a href="#" @click.prevent="useSuggestion(correctedQuery)" class="fw-bold">{{ correctedQuery }}</a>?
+      Did you mean:
+      <a href="#" @click.prevent="useSuggestion(correctedQuery)" class="fw-bold">{{ correctedQuery }}</a>?
     </div>
 
     <div class="item row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 px-2 py-3">
@@ -207,11 +254,22 @@ onMounted(async () => {
           <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
           <div class="card-body">
             <h5 class="card-title fw-bold">
-              {{ recipe.Name ? (recipe.Name.length > 20 ? recipe.Name.substring(0, 25) + '...' : recipe.Name) : '' }}
+              {{
+                recipe.Name
+                  ? recipe.Name.length > 20
+                    ? recipe.Name.substring(0, 25) + '...'
+                    : recipe.Name
+                  : ''
+              }}
             </h5>
             <p class="card-text text-muted">
-              {{ recipe.Description ? (recipe.Description.length > 20 ? recipe.Description.substring(0, 28) + '...' :
-                recipe.Description) : 'No description' }}
+              {{
+                recipe.Description
+                  ? recipe.Description.length > 20
+                    ? recipe.Description.substring(0, 28) + '...'
+                    : recipe.Description
+                  : 'No description'
+              }}
             </p>
           </div>
         </div>
@@ -219,10 +277,13 @@ onMounted(async () => {
     </div>
 
     <div class="pagination d-flex justify-content-center align-items-center gap-3 mt-4" v-if="totalPages > 1">
-      <button class="btn btn-primary" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">Previous</button>
+      <button class="btn btn-primary" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
+        Previous
+      </button>
       <span class="text-muted">Page {{ currentPage }} of {{ totalPages }} ({{ totalResults }} results)</span>
-      <button class="btn btn-primary" :disabled="currentPage === totalPages"
-        @click="goToPage(currentPage + 1)">Next</button>
+      <button class="btn btn-primary" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
+        Next
+      </button>
     </div>
   </div>
 
