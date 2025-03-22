@@ -15,6 +15,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@iconify/vue": "^4.3.0",
     "axios": "^1.8.3",
     "bootstrap": "^5.3.3",
     "pinia": "^3.0.1",

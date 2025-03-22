@@ -1,17 +1,16 @@
-<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- eslint-disable @typescript-eslint/no-unused-vars -->
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
+<!-- BookmarkView.vue -->
 <script setup lang="ts">
 import { ref, onMounted, onActivated } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
-
-// Import the local placeholder image
+import { Icon } from '@iconify/vue'
 import placeholderImage from '@/assets/placeholder.jpg'
 
-// Placeholder image constant
 const PLACEHOLDER_IMAGE = placeholderImage
 
-const userId = ref(1) // Replace with actual auth logic
+const userId = ref(1)
 const folders = ref<any[]>([])
 const newFolderName = ref('')
 const editingFolderId = ref<number | null>(null)
@@ -126,6 +125,10 @@ const startEditingRating = (bookmarkId: number) => {
 }
 
 const saveRating = async (folderId: number, bookmarkId: number, newRating: number) => {
+  if (newRating < 1 || newRating > 5) {
+    errorMessage.value = 'Rating must be between 1 and 5.'
+    return
+  }
   try {
     await axios.put(`http://localhost:5000/bookmarks/${bookmarkId}/rating`, { rating: newRating })
     const bookmark = bookmarks.value[folderId].find((b) => b.BookmarkId === bookmarkId)
@@ -151,15 +154,11 @@ const onDrop = async (event: DragEvent, toFolderId: number) => {
   event.preventDefault()
   const bookmarkId = parseInt(event.dataTransfer?.getData('bookmarkId') || '0')
   const fromFolderId = parseInt(event.dataTransfer?.getData('fromFolderId') || '0')
-
   if (fromFolderId === toFolderId) return
-
   try {
     await axios.put(`http://localhost:5000/bookmarks/${bookmarkId}`, { folder_id: toFolderId })
     const bookmark = bookmarks.value[fromFolderId].find((b) => b.BookmarkId === bookmarkId)
-    bookmarks.value[fromFolderId] = bookmarks.value[fromFolderId].filter(
-      (b) => b.BookmarkId !== bookmarkId,
-    )
+    bookmarks.value[fromFolderId] = bookmarks.value[fromFolderId].filter((b) => b.BookmarkId !== bookmarkId)
     if (!bookmarks.value[toFolderId]) bookmarks.value[toFolderId] = []
     bookmarks.value[toFolderId].push({ ...bookmark, FolderId: toFolderId })
     await fetchFoldersAndBookmarks()
@@ -173,23 +172,18 @@ const onDragOver = (event: DragEvent) => {
   event.preventDefault()
 }
 
-// Function to determine the image source with "character(0)" check
 const getImageUrl = (bookmark: any) => {
-  return bookmark.image_url && bookmark.image_url !== 'character(0)'
-    ? bookmark.image_url
-    : PLACEHOLDER_IMAGE
+  return bookmark.image_url && bookmark.image_url !== 'character(0)' ? bookmark.image_url : PLACEHOLDER_IMAGE
 }
 
 const handleImageError = (bookmarkId: number) => {
   imageLoadError.value[bookmarkId] = true
   const folderId = Object.keys(bookmarks.value).find((key: any) =>
-    bookmarks.value[key].some((b: any) => b.BookmarkId === bookmarkId),
+    bookmarks.value[key].some((b: any) => b.BookmarkId === bookmarkId)
   )
   if (folderId) {
     const bookmark = bookmarks.value[parseInt(folderId)].find((b) => b.BookmarkId === bookmarkId)
-    if (bookmark) {
-      bookmark.image_url = PLACEHOLDER_IMAGE // Fallback for invalid URLs
-    }
+    if (bookmark) bookmark.image_url = PLACEHOLDER_IMAGE
   }
 }
 
@@ -200,8 +194,8 @@ onActivated(fetchFoldersAndBookmarks)
 <template>
   <NavigationBar />
 
-  <div class="container mt-5 mb-5 pt-5 pb-5">
-    <h1 class="page-title display-4 fw-bold text-center mb-4">Bookmarks</h1>
+  <div class="container mt-5 pt-4">
+    <h1 class="page-title display-4 fw-bold text-center mb-4">My Bookmarks</h1>
     <p v-if="errorMessage" class="alert alert-danger text-center">{{ errorMessage }}</p>
 
     <div class="create-folder d-flex justify-content-center gap-3 mb-4">
@@ -246,17 +240,25 @@ onActivated(fetchFoldersAndBookmarks)
             <div class="bookmarks-list mt-3">
               <div v-if="bookmarks[folder.FolderId] && bookmarks[folder.FolderId].length > 0" class="bookmark-items">
                 <div v-for="bookmark in bookmarks[folder.FolderId]" :key="bookmark.BookmarkId"
-                  class="bookmark-item card mb-2" :draggable="editingFolder[folder.FolderId]"
-                  @dragstart="editingFolder[folder.FolderId] ? onDragStart($event, bookmark.BookmarkId, folder.FolderId) : null">
+                  class="bookmark-item card mb-2" :draggable="editingFolder[folder.FolderId]" @dragstart="
+                    editingFolder[folder.FolderId]
+                      ? onDragStart($event, bookmark.BookmarkId, folder.FolderId)
+                      : null
+                    ">
                   <div class="card-body d-flex align-items-center">
                     <img :src="getImageUrl(bookmark)" class="bookmark-image rounded me-3"
                       @error="handleImageError(bookmark.BookmarkId)" />
                     <div class="bookmark-info flex-grow-1">
                       <p class="bookmark-name card-text fw-medium mb-1">{{ bookmark.Name }}</p>
                       <div v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]"
-                        class="rating-edit d-flex gap-2">
-                        <input v-model.number="bookmark.Rating" type="number" min="1" max="5"
-                          class="form-control w-25" />
+                        class="rating-edit d-flex gap-2 align-items-center">
+                        <div class="star-rating">
+                          <Icon v-for="star in 5" :key="star"
+                            :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
+                              star <= bookmark.Rating ? 'text-warning' : 'text-muted',
+                              'me-1'
+                            ]" @click="bookmark.Rating = star" style="cursor: pointer; font-size: 1.2rem;" />
+                        </div>
                         <button @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
                           class="btn btn-success btn-sm">
                           Save
@@ -265,8 +267,15 @@ onActivated(fetchFoldersAndBookmarks)
                           Cancel
                         </button>
                       </div>
-                      <p v-else class="bookmark-rating card-text text-muted mb-0">
-                        Rating: {{ bookmark.Rating }} / 5
+                      <p v-else class="bookmark-rating card-text text-muted mb-0 d-flex align-items-center">
+                        <span class="star-rating me-2">
+                          <Icon v-for="star in 5" :key="star"
+                            :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
+                              star <= bookmark.Rating ? 'text-warning' : 'text-muted',
+                              'me-1'
+                            ]" style="font-size: 1rem;" />
+                        </span>
+                        ({{ bookmark.Rating }}/5)
                         <button v-if="editingFolder[folder.FolderId]" @click="startEditingRating(bookmark.BookmarkId)"
                           class="btn btn-warning btn-sm ms-2">
                           Edit
@@ -343,5 +352,11 @@ onActivated(fetchFoldersAndBookmarks)
 
 .btn-secondary:hover {
   background-color: #5a6268;
+}
+
+/* Ensure hover works in both display and edit modes */
+.star-rating .iconify:hover,
+.rating-edit .star-rating .iconify:hover {
+  color: #ffc107 !important;
 }
 </style>

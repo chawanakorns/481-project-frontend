@@ -3,7 +3,7 @@
     <div class="container-fluid px-4">
       <!-- Brand/logo area -->
       <a class="navbar-brand fw-bold text-primary" href="/home">
-        <i class="bi bi-rocket-takeoff me-2"></i>MyApp
+        <i class="bi bi-rocket-takeoff"></i>MyApp
       </a>
 
       <!-- Toggle button for mobile -->
@@ -17,12 +17,12 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
             <a class="nav-link" href="/home">
-              <i class="bi bi-house me-1"></i>Home
+              <i class="bi bi-house"></i>Home
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="/bookmarks">
-              <i class="bi bi-bookmark me-1"></i>Bookmarks
+              <i class="bi bi-bookmark"></i>Bookmarks
             </a>
           </li>
         </ul>
@@ -55,6 +55,7 @@
 .navbar-brand {
   font-size: 1.5rem;
   transition: color 0.2s ease;
+
 }
 
 .navbar-brand:hover {

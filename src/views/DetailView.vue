@@ -1,13 +1,13 @@
-<!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
+<!-- eslint-disable @typescript-eslint/no-unused-vars -->
+<!-- DetailView.vue -->
 <script setup lang="ts">
 import { defineProps, ref, onMounted } from 'vue'
 import axios from 'axios'
+import { Icon } from '@iconify/vue'
 
-// Import the local placeholder image
 import placeholderImage from '@/assets/placeholder.jpg'
 
-// Placeholder image constant
 const PLACEHOLDER_IMAGE = placeholderImage
 
 const props = defineProps<{
@@ -23,6 +23,16 @@ const rating = ref<number>(1)
 const userId = ref(1) // TODO: Replace with actual auth logic
 const feedbackMessage = ref<string>('')
 const showBookmarkSection = ref(false)
+
+const formatTime = (minutes: number | null | undefined): string => {
+  if (!minutes || typeof minutes !== 'number' || minutes <= 0) return 'Not specified'
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  let result = ''
+  if (hours > 0) result += `${hours} hour${hours > 1 ? 's' : ''}`
+  if (remainingMinutes > 0) result += `${hours > 0 ? ' ' : ''}${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`
+  return result.trim()
+}
 
 const fetchRecipe = async () => {
   if (!localRecipe.value) {
@@ -48,7 +58,7 @@ const fetchFolders = async () => {
 }
 
 const bookmarkRecipe = async () => {
-  if (!selectedFolderId.value || !rating.value) {
+  if (!selectedFolderId.value || !rating.value || rating.value < 1 || rating.value > 5) {
     feedbackMessage.value = 'Please select a folder and provide a rating (1-5).'
     return
   }
@@ -60,23 +70,19 @@ const bookmarkRecipe = async () => {
       rating: rating.value,
     })
     feedbackMessage.value = 'Recipe bookmarked successfully!'
+    showBookmarkSection.value = false
   } catch (error) {
     feedbackMessage.value = 'Failed to bookmark recipe.'
   }
 }
 
-// Function to determine the image source with "character(0)" check
 const getImageUrl = (recipe: any) => {
-  return recipe.image_url && recipe.image_url !== 'character(0)'
-    ? recipe.image_url
-    : PLACEHOLDER_IMAGE
+  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
 }
 
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
-  if (localRecipe.value) {
-    localRecipe.value.image_url = PLACEHOLDER_IMAGE // Set to placeholder instead of cycling
-  }
+  if (localRecipe.value) localRecipe.value.image_url = PLACEHOLDER_IMAGE
 }
 
 const toggleBookmarkSection = () => {
@@ -105,21 +111,25 @@ onMounted(() => {
       </div>
 
       <div class="recipe-content row g-4">
-        <div class="recipe-image col-lg-5 col-md-12">
+        <div class="recipe-image col-lg-5 col-md-12 text-center">
           <img :src="getImageUrl(localRecipe)" class="main-image img-fluid rounded shadow-sm"
             @error="handleImageError(localRecipe.RecipeId)" />
           <button v-if="!showBookmarkSection" @click="toggleBookmarkSection" class="btn btn-primary w-100 mt-3">
             Bookmark
           </button>
-          <div class="bookmark-section card shadow-sm mt-3 p-3" v-if="showBookmarkSection">
+          <div class="bookmark-section card shadow-sm mt-3 p-3 text-start" v-if="showBookmarkSection">
             <h2 class="h5 fw-bold">Bookmark</h2>
+            <h6 class="mt-3 fw-semibold">Select Bookmark Folders:</h6>
             <select v-model="selectedFolderId" class="form-select mb-2">
               <option v-for="folder in folders" :value="folder.FolderId" :key="folder.FolderId">
                 {{ folder.Name }}
               </option>
             </select>
-            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="form-control mb-2" />
-            <div class="d-flex gap-2">
+            <h6 class="mt-3 fw-semibold">Score:</h6>
+            <div class="star-rating mb-2">
+
+            </div>
+            <div class="d-flex gap-2 mt-3">
               <button @click="bookmarkRecipe" class="btn btn-success flex-fill">Bookmark</button>
               <button @click="toggleBookmarkSection" class="btn btn-danger flex-fill">Cancel</button>
             </div>
@@ -136,19 +146,34 @@ onMounted(() => {
             <div class="info-card card shadow-sm p-4 flex-fill"
               v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
               <h2 class="h4 pb-3 fw-bold text-decoration-underline">Time</h2>
-              <p v-if="localRecipe.PrepTime"><b>Prep:</b> {{ localRecipe.PrepTime }} minutes</p>
-              <p v-if="localRecipe.CookTime"><b>Cook:</b> {{ localRecipe.CookTime }} minutes</p>
-              <p v-if="localRecipe.TotalTime"><b>Total:</b> {{ localRecipe.TotalTime }} minutes</p>
+              <p v-if="localRecipe.PrepTime"><b>Prep:</b> {{ formatTime(localRecipe.PrepTime) }}</p>
+              <p v-if="localRecipe.CookTime"><b>Cook:</b> {{ formatTime(localRecipe.CookTime) }}</p>
+              <p v-if="localRecipe.TotalTime"><b>Total:</b> {{ formatTime(localRecipe.TotalTime) }}</p>
             </div>
 
             <div class="info-card card shadow-sm p-4 flex-fill" v-if="localRecipe.RecipeIngredientParts">
               <h2 class="h4 pb-3 fw-bold text-decoration-underline">Ingredients</h2>
-              <ul class="list-group list-group-flush">
-                <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts" :key="index"
-                  class="list-group-item">
-                  {{ localRecipe.RecipeIngredientQuantities?.[index] || '' }} {{ ingredient }}
-                </li>
-              </ul>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">Ingredient</th>
+                    <th scope="col" class="text-center">Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(ingredient, index) in localRecipe.RecipeIngredientParts" :key="index">
+                    <td>{{ ingredient }}</td>
+                    <td class="text-center">
+                      <span
+                        v-if="localRecipe.RecipeIngredientQuantities?.[index] && localRecipe.RecipeIngredientQuantities[index] !== 'NA'"
+                        class="text-muted">
+                        {{ localRecipe.RecipeIngredientQuantities[index] }}
+                      </span>
+                      <span v-else>—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -162,14 +187,36 @@ onMounted(() => {
           </div>
 
           <div class="info-card card shadow-sm p-4"
-            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
+            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent || localRecipe.CarbohydrateContent || localRecipe.SugarContent || localRecipe.FiberContent">
             <h2 class="h4 pb-3 fw-bold text-decoration-underline">Nutrition (per serving)</h2>
-            <p v-if="localRecipe.Calories"><b>Calories:</b> {{ localRecipe.Calories }} kcal</p>
-            <p v-if="localRecipe.ProteinContent"><b>Protein:</b> {{ localRecipe.ProteinContent }} g</p>
-            <p v-if="localRecipe.FatContent"><b>Fat:</b> {{ localRecipe.FatContent }} g</p>
-            <p v-if="localRecipe.CarbohydrateContent"><b>Carbs:</b> {{ localRecipe.CarbohydrateContent }} g</p>
-            <p v-if="localRecipe.SugarContent"><b>Sugar:</b> {{ localRecipe.SugarContent }} g</p>
-            <p v-if="localRecipe.FiberContent"><b>Fiber:</b> {{ localRecipe.FiberContent }} g</p>
+            <table class="table table-striped">
+              <tbody>
+                <tr v-if="localRecipe.Calories">
+                  <td><b>Calories</b></td>
+                  <td>{{ localRecipe.Calories }} kcal</td>
+                </tr>
+                <tr v-if="localRecipe.ProteinContent">
+                  <td><b>Protein</b></td>
+                  <td>{{ localRecipe.ProteinContent }} g</td>
+                </tr>
+                <tr v-if="localRecipe.FatContent">
+                  <td><b>Fat</b></td>
+                  <td>{{ localRecipe.FatContent }} g</td>
+                </tr>
+                <tr v-if="localRecipe.CarbohydrateContent">
+                  <td><b>Carbs</b></td>
+                  <td>{{ localRecipe.CarbohydrateContent }} g</td>
+                </tr>
+                <tr v-if="localRecipe.SugarContent">
+                  <td><b>Sugar</b></td>
+                  <td>{{ localRecipe.SugarContent }} g</td>
+                </tr>
+                <tr v-if="localRecipe.FiberContent">
+                  <td><b>Fiber</b></td>
+                  <td>{{ localRecipe.FiberContent }} g</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -219,5 +266,15 @@ onMounted(() => {
 
 .btn-danger:hover {
   background-color: #c82333;
+}
+
+.star-rating .iconify:hover {
+  color: #ffc107 !important;
+  /* Hover effect for stars */
+}
+
+/* Ensure table headers are styled consistently */
+.table th {
+  font-weight: bold;
 }
 </style>
