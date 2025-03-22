@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -131,7 +132,7 @@ onMounted(async () => {
 <template>
   <NavigationBar />
   <div class="container mt-5 mb-5 pt-5 pb-5">
-    <div class="text-center mb-4">
+    <div class="text-start mb-4">
       <h1 class="display-5 fw-bold">You may like these</h1>
     </div>
 
@@ -184,7 +185,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="text-center my-4">
+    <div class="text-start my-4">
       <h1 class="display-5 fw-bold">Explore</h1>
     </div>
 

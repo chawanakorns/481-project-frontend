@@ -1,9 +1,13 @@
+<script setup lang="ts">
+import { Icon } from '@iconify/vue'
+</script>
+
 <template>
   <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
     <div class="container-fluid px-4">
       <!-- Brand/logo area -->
       <a class="navbar-brand fw-bold text-primary" href="/home">
-        <i class="bi bi-rocket-takeoff"></i>MyApp
+        <Icon icon="mdi:rocket-launch-outline" width="32px" height="32px" class="me-1" /> MyApp
       </a>
 
       <!-- Toggle button for mobile -->
@@ -14,23 +18,19 @@
 
       <!-- Navigation items -->
       <div class="collapse navbar-collapse" id="navbarContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link" href="/home"> <i class="bi bi-house"></i>Home </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/bookmarks"> <i class="bi bi-bookmark"></i>Bookmarks </a>
-          </li>
-        </ul>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0"></ul>
 
         <!-- Right-side actions -->
-        <div class="d-flex align-items-center gap-3">
-          <button class="btn btn-outline-primary position-relative">
-            <a class="nav-link" href="#"> <i class="bi bi-person-circle me-1"></i>Profile </a>
-          </button>
+        <div class="d-flex align-items-center">
+          <a class="nav-link d-flex align-items-center" href="/bookmarks">
+            <Icon icon="mdi:bookmark-outline" width="32" height="32" />
+          </a>
+          <a class="nav-link d-flex align-items-center" href="#">
+            <Icon icon="mdi:account-circle-outline" width="32" height="32" />
+          </a>
           <button class="btn btn-primary">
-            <a class="nav-link text-white" href="/logout">
-              <i class="bi bi-box-arrow-right me-1"></i>Log out
+            <a class="nav-link text-white d-flex align-items-center" href="/logout">
+              <Icon icon="mdi:logout" /> Log out
             </a>
           </button>
         </div>
@@ -57,9 +57,10 @@
 
 .nav-link {
   color: #333;
-  padding: 0.5rem 1rem;
   border-radius: 0.25rem;
   transition: all 0.2s ease;
+  margin-left: 6px;
+  margin-right: 6px;
 }
 
 .nav-link:hover {
@@ -67,8 +68,13 @@
   color: #0d6efd;
 }
 
+.nav-link .iconify,
+.navbar-brand .iconify {
+  font-size: 1.2rem;
+}
+
 .btn {
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .btn:hover {
@@ -78,10 +84,19 @@
 .btn-primary {
   background: linear-gradient(45deg, #0d6efd, #0a58ca);
   border: none;
+  margin-left: 16px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(45deg, #0a58ca, #084298);
 }
 
 .btn-outline-primary {
   border-width: 2px;
+}
+
+.btn-outline-primary:hover {
+  background-color: rgba(13, 110, 253, 0.1);
 }
 
 @media (max-width: 991px) {
@@ -91,6 +106,21 @@
     border-radius: 0.5rem;
     margin-top: 0.5rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem;
+  }
+
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .d-flex.align-items-center.gap-3 {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
   }
 }
 </style>

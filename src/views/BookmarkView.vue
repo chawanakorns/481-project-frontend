@@ -55,7 +55,8 @@ const fetchSuggestions = async (folderId: number) => {
     }
   } catch (error) {
     console.error('Error fetching suggestions:', error)
-    errorMessage.value = error.response?.data?.message || 'Failed to fetch suggestions.'
+    const err = error as any
+    errorMessage.value = err.response?.data?.message || 'Failed to fetch suggestions.'
   }
 }
 
