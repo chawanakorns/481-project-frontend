@@ -194,8 +194,8 @@ onActivated(fetchFoldersAndBookmarks)
 <template>
   <NavigationBar />
 
-  <div class="container mt-5 pt-4">
-    <h1 class="page-title display-4 fw-bold text-center mb-4">My Bookmarks</h1>
+  <div class="container mt-5 mb-5 pt-5 pb-5">
+    <h1 class="page-title display-4 fw-bold text-center mb-4">Bookmarks</h1>
     <p v-if="errorMessage" class="alert alert-danger text-center">{{ errorMessage }}</p>
 
     <div class="create-folder d-flex justify-content-center gap-3 mb-4">
@@ -204,7 +204,7 @@ onActivated(fetchFoldersAndBookmarks)
       <button @click="createFolder" class="btn btn-success">Create Folder</button>
     </div>
 
-    <div class="folder-list row row-cols-1 row-cols-lg-2 g-4">
+    <div class="folder-list row row-cols-1 row-cols-lg-2 g-4 px-5 py-3">
       <div v-for="folder in folders" :key="folder.FolderId" class="col">
         <div class="folder-card card shadow-sm h-100" :class="{ 'bg-light': editingFolder[folder.FolderId] }"
           @drop="onDrop($event, folder.FolderId)" @dragover="onDragOver($event)">
@@ -219,7 +219,7 @@ onActivated(fetchFoldersAndBookmarks)
             <div v-else class="folder-content d-flex justify-content-between align-items-center">
               <h3 class="folder-name card-title fw-bold">
                 {{ folder.Name }} <br />
-                <small class="text-muted">
+                <small class="text-muted h5">
                   ({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg:
                   {{ folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})
                 </small>
@@ -227,13 +227,17 @@ onActivated(fetchFoldersAndBookmarks)
               <div class="folder-actions d-flex gap-2">
                 <button v-if="editingFolder[folder.FolderId]" @click="deleteFolder(folder.FolderId)"
                   class="btn btn-danger">
-                  Delete
+                  <Icon icon="mdi:trash-can-outline" style="font-size: 1.2rem;" />
                 </button>
-                <button v-if="editingFolder[folder.FolderId]" @click="startEditing(folder)" class="btn btn-info">
-                  Edit Name
+                <button v-if="editingFolder[folder.FolderId]" @click="startEditing(folder)"
+                  class="btn btn-info d-flex align-items-center gap-1">
+                  <Icon icon="mdi:pencil-outline" style="font-size: 1.2rem;" />
+                  <span class="fs-6">Edit Name</span>
                 </button>
-                <button @click="toggleEditingFolder(folder.FolderId)" class="btn btn-primary">
-                  {{ editingFolder[folder.FolderId] ? 'Done' : 'Edit' }}
+                <button @click="toggleEditingFolder(folder.FolderId)"
+                  class="btn btn-primary d-flex align-items-center gap-1">
+                  <Icon :icon="editingFolder[folder.FolderId] ? 'mdi:check' : 'mdi:edit'" style="font-size: 1.2rem;" />
+                  <span class="fs-6">{{ editingFolder[folder.FolderId] ? 'Done' : 'Edit' }}</span>
                 </button>
               </div>
             </div>
@@ -252,7 +256,8 @@ onActivated(fetchFoldersAndBookmarks)
                       <p class="bookmark-name card-text fw-medium mb-1">{{ bookmark.Name }}</p>
                       <div v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]"
                         class="rating-edit d-flex gap-2 align-items-center">
-                        <div class="star-rating">
+                        <div
+                          :class="['star-rating', { 'editable': editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId] }]">
                           <Icon v-for="star in 5" :key="star"
                             :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
                               star <= bookmark.Rating ? 'text-warning' : 'text-muted',
@@ -268,7 +273,7 @@ onActivated(fetchFoldersAndBookmarks)
                         </button>
                       </div>
                       <p v-else class="bookmark-rating card-text text-muted mb-0 d-flex align-items-center">
-                        <span class="star-rating me-2">
+                        <span :class="['star-rating', { 'editable': false }]" class="me-2">
                           <Icon v-for="star in 5" :key="star"
                             :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
                               star <= bookmark.Rating ? 'text-warning' : 'text-muted',
@@ -284,12 +289,12 @@ onActivated(fetchFoldersAndBookmarks)
                     </div>
                     <button v-if="editingFolder[folder.FolderId]"
                       @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)" class="btn btn-danger btn-sm ms-2">
-                      X
+                      <Icon icon="mdi:trash-can-outline" style="font-size: 1.2rem;" />
                     </button>
                   </div>
                 </div>
               </div>
-              <p v-else class="text-muted mt-2">No bookmarks yet</p>
+              <p v-else class="text-muted mt-2 text-center">No bookmarks yet</p>
             </div>
           </div>
         </div>
@@ -354,9 +359,7 @@ onActivated(fetchFoldersAndBookmarks)
   background-color: #5a6268;
 }
 
-/* Ensure hover works in both display and edit modes */
-.star-rating .iconify:hover,
-.rating-edit .star-rating .iconify:hover {
+.star-rating.editable .iconify:hover {
   color: #ffc107 !important;
 }
 </style>

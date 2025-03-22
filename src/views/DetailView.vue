@@ -34,6 +34,37 @@ const formatTime = (minutes: number | null | undefined): string => {
   return result.trim()
 }
 
+const formatQuantity = (quantity: string): string => {
+  if (!quantity || quantity === 'NA') return '—'
+
+  // Split the quantity into parts (whole number and fraction)
+  const parts = quantity.trim().split(' ')
+  if (parts.length === 1) return quantity // Return as-is if no fraction
+
+  const whole = parts[0]
+  const fraction = parts[1]
+
+  // Map common fractions to their Unicode equivalents
+  const fractionMap: { [key: string]: string } = {
+    '1/2': '½',
+    '1/3': '⅓',
+    '2/3': '⅔',
+    '1/4': '¼',
+    '3/4': '¾',
+    '1/8': '⅛',
+    '3/8': '⅜',
+    '5/8': '⅝',
+    '7/8': '⅞'
+  }
+
+  if (fractionMap[fraction]) {
+    return whole ? `${whole} ${fractionMap[fraction]}` : fractionMap[fraction]
+  }
+
+  // If fraction isn't in the map, return original format with a space
+  return quantity
+}
+
 const fetchRecipe = async () => {
   if (!localRecipe.value) {
     try {
@@ -127,7 +158,11 @@ onMounted(() => {
             </select>
             <h6 class="mt-3 fw-semibold">Score:</h6>
             <div class="star-rating mb-2">
-
+              <Icon v-for="star in 5" :key="star" :icon="star <= rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
+                star <= rating ? 'text-warning' : 'text-muted',
+                'me-1'
+              ]" @click="rating = star" style="cursor: pointer; font-size: 1.2rem;" />
+              <span class="ms-2 text-muted">({{ rating }}/5)</span>
             </div>
             <div class="d-flex gap-2 mt-3">
               <button @click="bookmarkRecipe" class="btn btn-success flex-fill">Bookmark</button>
@@ -142,15 +177,49 @@ onMounted(() => {
             <p>{{ localRecipe.Description || 'No description available.' }}</p>
           </div>
 
-          <div class="d-flex gap-3 mb-3">
-            <div class="info-card card shadow-sm p-4 flex-fill"
-              v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
+          <div class="d-flex gap-3 mb-3" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
+            <div class="info-card card shadow-sm p-4">
               <h2 class="h4 pb-3 fw-bold text-decoration-underline">Time</h2>
               <p v-if="localRecipe.PrepTime"><b>Prep:</b> {{ formatTime(localRecipe.PrepTime) }}</p>
               <p v-if="localRecipe.CookTime"><b>Cook:</b> {{ formatTime(localRecipe.CookTime) }}</p>
               <p v-if="localRecipe.TotalTime"><b>Total:</b> {{ formatTime(localRecipe.TotalTime) }}</p>
             </div>
 
+            <div class="info-card card shadow-sm p-4 w-100% flex-fill"
+              v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent || localRecipe.CarbohydrateContent || localRecipe.SugarContent || localRecipe.FiberContent">
+              <h2 class="h4 pb-3 fw-bold text-decoration-underline">Nutrition (per serving)</h2>
+              <table class="table table-striped">
+                <tbody>
+                  <tr v-if="localRecipe.Calories">
+                    <td><b>Calories</b></td>
+                    <td>{{ localRecipe.Calories }} kcal</td>
+                  </tr>
+                  <tr v-if="localRecipe.ProteinContent">
+                    <td><b>Protein</b></td>
+                    <td>{{ localRecipe.ProteinContent }} g</td>
+                  </tr>
+                  <tr v-if="localRecipe.FatContent">
+                    <td><b>Fat</b></td>
+                    <td>{{ localRecipe.FatContent }} g</td>
+                  </tr>
+                  <tr v-if="localRecipe.CarbohydrateContent">
+                    <td><b>Carbs</b></td>
+                    <td>{{ localRecipe.CarbohydrateContent }} g</td>
+                  </tr>
+                  <tr v-if="localRecipe.SugarContent">
+                    <td><b>Sugar</b></td>
+                    <td>{{ localRecipe.SugarContent }} g</td>
+                  </tr>
+                  <tr v-if="localRecipe.FiberContent">
+                    <td><b>Fiber</b></td>
+                    <td>{{ localRecipe.FiberContent }} g</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 mb-3">
             <div class="info-card card shadow-sm p-4 flex-fill" v-if="localRecipe.RecipeIngredientParts">
               <h2 class="h4 pb-3 fw-bold text-decoration-underline">Ingredients</h2>
               <table class="table table-striped">
@@ -167,7 +236,7 @@ onMounted(() => {
                       <span
                         v-if="localRecipe.RecipeIngredientQuantities?.[index] && localRecipe.RecipeIngredientQuantities[index] !== 'NA'"
                         class="text-muted">
-                        {{ localRecipe.RecipeIngredientQuantities[index] }}
+                        {{ formatQuantity(localRecipe.RecipeIngredientQuantities[index]) }}
                       </span>
                       <span v-else>—</span>
                     </td>
@@ -184,39 +253,6 @@ onMounted(() => {
                 {{ step }}
               </li>
             </ol>
-          </div>
-
-          <div class="info-card card shadow-sm p-4"
-            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent || localRecipe.CarbohydrateContent || localRecipe.SugarContent || localRecipe.FiberContent">
-            <h2 class="h4 pb-3 fw-bold text-decoration-underline">Nutrition (per serving)</h2>
-            <table class="table table-striped">
-              <tbody>
-                <tr v-if="localRecipe.Calories">
-                  <td><b>Calories</b></td>
-                  <td>{{ localRecipe.Calories }} kcal</td>
-                </tr>
-                <tr v-if="localRecipe.ProteinContent">
-                  <td><b>Protein</b></td>
-                  <td>{{ localRecipe.ProteinContent }} g</td>
-                </tr>
-                <tr v-if="localRecipe.FatContent">
-                  <td><b>Fat</b></td>
-                  <td>{{ localRecipe.FatContent }} g</td>
-                </tr>
-                <tr v-if="localRecipe.CarbohydrateContent">
-                  <td><b>Carbs</b></td>
-                  <td>{{ localRecipe.CarbohydrateContent }} g</td>
-                </tr>
-                <tr v-if="localRecipe.SugarContent">
-                  <td><b>Sugar</b></td>
-                  <td>{{ localRecipe.SugarContent }} g</td>
-                </tr>
-                <tr v-if="localRecipe.FiberContent">
-                  <td><b>Fiber</b></td>
-                  <td>{{ localRecipe.FiberContent }} g</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
