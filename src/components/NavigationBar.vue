@@ -1,83 +1,102 @@
 <template>
-  <div class="navbar">
-    <ul class="topnav">
-      <div style="display: flex; flex-direction: row">
-        <li><a href="/home">Home</a></li>
-        <li><a href="/bookmarks">Bookmarks</a></li>
+  <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+    <div class="container-fluid px-4">
+      <!-- Brand/logo area -->
+      <a class="navbar-brand fw-bold text-primary" href="/home">
+        <i class="bi bi-rocket-takeoff me-2"></i>MyApp
+      </a>
+
+      <!-- Toggle button for mobile -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Navigation items -->
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="/home">
+              <i class="bi bi-house me-1"></i>Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/bookmarks">
+              <i class="bi bi-bookmark me-1"></i>Bookmarks
+            </a>
+          </li>
+        </ul>
+
+        <!-- Right-side actions -->
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-outline-primary position-relative">
+            <a class="nav-link" href="#">
+              <i class="bi bi-person-circle me-1"></i>Profile
+            </a>
+          </button>
+          <button class="btn btn-primary">
+            <a class="nav-link text-white" href="/logout">
+              <i class="bi bi-box-arrow-right me-1"></i>Log out
+            </a>
+          </button>
+        </div>
       </div>
-      <div>
-        <button><a>Profile</a></button>
-        <button><a href="/logout">Log out</a></button>
-      </div>
-    </ul>
-  </div>
+    </div>
+  </nav>
 </template>
 
-<style>
-/** Navigation Bar **/
+<style scoped>
 .navbar {
-  position: fixed;
-  top: 0;
-  overflow: hidden;
-  width: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   z-index: 100;
+  transition: all 0.3s ease;
 }
 
-.topnav {
-  display: flex;
-  justify-content: space-between;
-  overflow: hidden;
-  background-color: #e9e9e9;
+.navbar-brand {
+  font-size: 1.5rem;
+  transition: color 0.2s ease;
 }
 
-.topnav a {
-  float: left;
-  display: block;
-  color: black;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  font-size: 17px;
+.navbar-brand:hover {
+  color: #0d6efd !important;
 }
 
-.topnav a:hover {
-  background-color: #ddd;
-  color: black;
+.nav-link {
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
 }
 
-.topnav a.active {
-  background-color: #2196f3;
-  color: white;
+.nav-link:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
 }
 
-.topnav input[type='text'] {
-  float: right;
-  padding: 6px;
+.btn {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, #0d6efd, #0a58ca);
   border: none;
-  margin-top: 10px;
-  margin-right: 16px;
-  font-size: 17px;
 }
 
-@media screen and (max-width: 600px) {
-  .topnav a,
-  .topnav input[type='text'] {
-    float: none;
-    display: block;
-    text-align: left;
-    width: 100%;
-    margin: 0;
-    padding: 14px;
-  }
-
-  .topnav input[type='text'] {
-    border: 1px solid #ccc;
-  }
+.btn-outline-primary {
+  border-width: 2px;
 }
 
-ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
+@media (max-width: 991px) {
+  .navbar-collapse {
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
 }
 </style>

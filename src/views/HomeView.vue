@@ -1,5 +1,7 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
+<!-- HomeView.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 import DetailView from '@/views/DetailView.vue'
@@ -11,7 +13,6 @@ import placeholderImage from '@/assets/placeholder.jpg'
 const PLACEHOLDER_IMAGE = placeholderImage
 
 const userId = ref(1) // Replace with actual auth logic later
-const recipes = ref<any[]>([])
 const filteredRecipes = ref<any[]>([])
 const searchTerm = ref('')
 const correctedQuery = ref<string | null>(null)
@@ -26,13 +27,25 @@ const totalResults = ref(0)
 const recommendedRecipes = ref<any[]>([])
 const recommendationMessage = ref<string>('')
 
+// Number of items per carousel slide (matches search section's lg breakpoint)
+const itemsPerSlide = 4
+
+// Compute grouped recommendations for carousel
+const groupedRecommendations = computed(() => {
+  const groups = []
+  for (let i = 0; i < recommendedRecipes.value.length; i += itemsPerSlide) {
+    groups.push(recommendedRecipes.value.slice(i, i + itemsPerSlide))
+  }
+  return groups
+})
+
 const fetchRecipes = async () => {
   try {
     const response = await axios.get('http://localhost:5000/recipes', {
       params: {
         limit: itemsPerPage,
-        page: currentPage.value
-      }
+        page: currentPage.value,
+      },
     })
     filteredRecipes.value = response.data.recipes
     totalPages.value = response.data.total_pages
@@ -48,8 +61,8 @@ const filterRecipes = async () => {
       params: {
         search: searchTerm.value.trim(),
         limit: itemsPerPage,
-        page: currentPage.value
-      }
+        page: currentPage.value,
+      },
     })
     filteredRecipes.value = response.data.recipes
     originalQuery.value = response.data.original_query
@@ -70,16 +83,18 @@ const useSuggestion = async (suggestion: string) => {
 
 const handleImageError = (recipeId: number) => {
   imageLoadError.value[recipeId] = true
-  const recipe = filteredRecipes.value.find((r) => r.RecipeId === recipeId) ||
+  const recipe =
+    filteredRecipes.value.find((r) => r.RecipeId === recipeId) ||
     recommendedRecipes.value.find((r) => r.RecipeId === recipeId)
   if (recipe) {
     recipe.image_url = PLACEHOLDER_IMAGE // Fallback for invalid URLs
   }
 }
 
-// Function to determine the image source with "character(0)" check
 const getImageUrl = (recipe: any) => {
-  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
+  return recipe.image_url && recipe.image_url !== 'character(0)'
+    ? recipe.image_url
+    : PLACEHOLDER_IMAGE
 }
 
 const openModal = (recipe: any) => {
@@ -97,8 +112,8 @@ const fetchRecommendedRecipes = async () => {
     const response = await axios.get('http://localhost:5000/recommendations', {
       params: {
         user_id: userId.value,
-        limit: 10
-      }
+        limit: 12,
+      },
     })
     recommendedRecipes.value = response.data.recommendations
     recommendationMessage.value = response.data.message || ''
@@ -129,322 +144,220 @@ onMounted(async () => {
 <template>
   <NavigationBar />
 
-  <div class="container">
-    <div class="title">
-      <h1>You may like these</h1>
+  <div class="container mt-5 mb-5 pt-5 pb-5">
+    <div class="text-center mb-4">
+      <h1 class="display-5 fw-bold">You may like these</h1>
     </div>
 
-    <div class="recommendation">
-      <div v-for="recipe in recommendedRecipes" :key="recipe.RecipeId" class="recommendation-card"
-        @click="openModal(recipe)">
-        <img :src="getImageUrl(recipe)" class="card-image" @error="handleImageError(recipe.RecipeId)" />
-        <div class="card-container">
-          <h4>
-            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) : 'Name not loaded' }}</b>
-          </h4>
-          <p class="preview">
-            {{ recipe.Description ? recipe.Description.substring(0, 34) + '...' : 'No description' }}
-          </p>
+    <!-- Recommendation Carousel -->
+    <div class="recommendation-container mb-5 px-2 py-3">
+      <div id="recommendationCarousel" class="carousel slide">
+        <div class="carousel-inner">
+          <div v-if="recommendedRecipes.length === 0" class="carousel-item active">
+            <div class="text-center p-4 text-muted w-100">
+              <p>{{ recommendationMessage || 'No new recommendations available. Explore more recipes!' }}</p>
+            </div>
+          </div>
+          <div v-else v-for="(group, index) in groupedRecommendations" :key="index"
+            :class="['carousel-item', { 'active': index === 0 }]">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+              <div v-for="recipe in group" :key="recipe.RecipeId" class="col">
+                <div class="recommendation-card card shadow-sm h-100" @click="openModal(recipe)">
+                  <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
+                  <div class="card-body text-start">
+                    <h5 class="card-title fw-bold">
+                      {{ recipe.Name ? (recipe.Name.length > 30 ? recipe.Name.substring(0, 28) + '...' : recipe.Name) :
+                        'Name not loaded' }}
+                    </h5>
+                    <p class="card-text text-muted">
+                      {{ recipe.Description ? (recipe.Description.length > 34 ? recipe.Description.substring(0, 34) +
+                        '...' : recipe.Description) : 'No description' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div v-if="recommendedRecipes.length === 0" class="no-recommendations">
-        <p>{{ recommendationMessage || 'No new recommendations available. Explore more recipes!' }}</p>
+        <button v-if="groupedRecommendations.length > 1" class="carousel-control-prev" type="button"
+          data-bs-target="#recommendationCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button v-if="groupedRecommendations.length > 1" class="carousel-control-next" type="button"
+          data-bs-target="#recommendationCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
       </div>
     </div>
 
-    <div class="title">
-      <h1>Explore</h1>
+    <div class="text-center my-4">
+      <h1 class="display-5 fw-bold">Explore</h1>
     </div>
-    <div class="search-body">
-      <br />
-      <div class="search-container">
-        <input class="search-bar" type="text" placeholder="Search..." v-model="searchTerm"
+
+    <div class="search-body d-flex justify-content-center mb-4">
+      <div class="input-group w-50">
+        <input class="form-control" type="text" placeholder="Search..." v-model="searchTerm"
           @keyup.enter="filterRecipes" />
-        <button class="search-button" @click="filterRecipes">Search</button>
+        <button class="btn btn-primary" @click="filterRecipes">Search</button>
       </div>
     </div>
 
-    <div v-if="correctedQuery && correctedQuery !== originalQuery" class="spell-suggestion">
-      Did you mean:<a href="#" @click.prevent="useSuggestion(correctedQuery)"><strong>{{ correctedQuery
-          }}</strong></a>?
+    <div v-if="correctedQuery && correctedQuery !== originalQuery" class="alert alert-info text-center mb-4">
+      Did you mean: <a href="#" @click.prevent="useSuggestion(correctedQuery)" class="fw-bold">{{ correctedQuery }}</a>?
     </div>
 
-    <div class="item">
-      <div v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="item-card" @click="openModal(recipe)">
-        <img :src="getImageUrl(recipe)" class="card-image" @error="handleImageError(recipe.RecipeId)" />
-        <div class="card-container">
-          <h4>
-            <b>{{ recipe.Name ? recipe.Name.substring(0, 34) : 'Name not loaded' }}</b>
-          </h4>
-          <p class="preview">
-            {{ recipe.Description ? recipe.Description.substring(0, 34) + '...' : 'No description' }}
-          </p>
+    <div class="item row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 px-2 py-3">
+      <div v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="col">
+        <div class="item-card card shadow-sm h-100" @click="openModal(recipe)">
+          <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
+          <div class="card-body">
+            <h5 class="card-title fw-bold">
+              {{ recipe.Name ? (recipe.Name.length > 30 ? recipe.Name.substring(0, 28) + '...' : recipe.Name) : '' }}
+            </h5>
+            <p class="card-text text-muted">
+              {{ recipe.Description ? (recipe.Description.length > 34 ? recipe.Description.substring(0, 34) + '...' :
+                recipe.Description) : 'No description' }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="pagination" v-if="totalPages > 1">
-      <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" class="pagination-button">
+    <div class="pagination d-flex justify-content-center align-items-center gap-3 mt-4" v-if="totalPages > 1">
+      <button class="btn btn-primary" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
         Previous
       </button>
-      <span class="pagination-info">
+      <span class="text-muted">
         Page {{ currentPage }} of {{ totalPages }} ({{ totalResults }} results)
       </span>
-      <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" class="pagination-button">
+      <button class="btn btn-primary" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
         Next
       </button>
     </div>
   </div>
 
-  <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-    <div class="modal-content">
-      <button class="close-button" @click="closeModal">X</button>
-      <DetailView :id="selectedRecipe.RecipeId.toString()" :recipe="selectedRecipe" />
+  <!-- Modal with corrected backdrop handling -->
+  <Teleport to="body" v-if="showModal">
+    <div class="modal fade show" id="recipeModal" tabindex="-1" aria-labelledby="recipeModalLabel" aria-hidden="false"
+      style="display: block; z-index: 1050;">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="z-index: 1051;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-5">
+            <DetailView :id="selectedRecipe.RecipeId.toString()" :recipe="selectedRecipe" />
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+    <div class="modal-backdrop fade show" style="z-index: 1049;" @click="closeModal"></div>
+  </Teleport>
 </template>
 
-<style>
-.card-image {
+<style scoped>
+.card-img-top {
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 8px 8px 8px 8px;
+  border-radius: 8px 8px 0 0;
 }
 
-.search-body {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  text-align: center;
-}
-
-.search-bar {
-  width: 300px;
-  margin: 20px;
-  padding: 10px;
-  font-size: 17px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.search-button {
-  padding: 10px 20px;
-  font-size: 17px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.spell-suggestion {
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #666;
-}
-
-.spell-suggestion a {
-  font-size: 14px;
-  color: #007bff;
-  text-decoration: none;
-}
-
-.spell_suggestion a:hover {
-  text-decoration: underline;
-}
-
-.title {
-  text-align: center;
-  width: 100%;
-  padding-left: 20px;
-  margin-top: 20px;
-}
-
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 60px;
-  padding-left: 60px;
-  padding-right: 60px;
-  padding-bottom: 60px;
-}
-
-.recommendation {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  justify-content: flex-start;
-  padding: 10px;
-  max-width: 100%;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  gap: 20px;
-}
-
-.recommendation::-webkit-scrollbar {
-  height: 8px;
-}
-
-.recommendation::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-}
-
-.recommendation::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.recommendation-card {
-  width: 300px;
-  height: 280px;
-  text-align: center;
-  margin: 20px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-  transition: 0.3s;
-  flex-shrink: 0;
-  text-decoration: none;
-  color: inherit;
-  background: #fff;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
+.recommendation-container,
 .item {
-  display: grid;
-  padding-left: 10px;
-  padding-right: 10px;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
   width: 100%;
-  justify-items: center;
+  max-width: 1248px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.card-container {
-  text-align: left;
-  padding: 10px 16px;
-}
-
-.item-card {
-  width: 300px;
-  height: 280px;
-  margin: 20px;
+.carousel-inner {
   text-align: center;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-  transition: 0.3s;
-  text-decoration: none;
-  color: inherit;
-  background: #fff;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
-.preview {
-  font-size: 14px;
-  color: #666;
-  margin: 5px 0 0;
-}
-
-.card:hover {
-  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
+.recommendation-card,
+.item-card {
   width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 60px;
-  border-radius: 8px;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.close-button {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 16px;
+  height: 280px;
+  transition: box-shadow 0.3s;
   cursor: pointer;
-  transition: background-color 0.3s;
-  z-index: 10;
 }
 
-.close-button:hover {
-  background: #c82333;
+.recommendation-card:hover,
+.item-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  margin-top: 20px;
-  padding: 10px;
+.card-title {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
 }
 
-.pagination-button {
-  padding: 8px 16px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.card-text {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.btn-primary {
   transition: background-color 0.3s;
 }
 
-.pagination-button:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: #0056b3;
 }
 
-.pagination-button:disabled {
+.btn-primary:disabled {
   background-color: #ccc;
-  cursor: not-allowed;
 }
 
-.pagination-info {
-  font-size: 16px;
-  color: #666;
+/* Modal-specific styles */
+.modal {
+  pointer-events: none;
 }
 
-.no-recommendations {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-  font-size: 16px;
+.modal-dialog {
+  pointer-events: auto;
 }
 
-@media (max-width: 1000px) {
-  .item {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.modal-backdrop {
+  pointer-events: auto;
+  opacity: 0.5;
 }
 
-@media (max-width: 700px) {
-  .item {
-    grid-template-columns: 1fr;
-  }
+/* Customized circular carousel controls */
+.carousel-control-prev,
+.carousel-control-next {
+  width: 40px;
+  height: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #007bff;
+  border-radius: 50%;
+  opacity: 0.8;
+  transition: opacity 0.3s, background-color 0.3s;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  opacity: 1;
+  background-color: #0056b3;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  width: 20px;
+  height: 20px;
+  background-size: 100%, 100%;
+  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+}
+
+.carousel-control-prev {
+  left: -50px;
+}
+
+.carousel-control-next {
+  right: -50px;
 }
 </style>

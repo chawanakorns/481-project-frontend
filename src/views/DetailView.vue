@@ -1,3 +1,5 @@
+<!-- eslint-disable @typescript-eslint/no-unused-vars -->
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
 import { defineProps, ref, onMounted } from 'vue'
 import axios from 'axios'
@@ -65,7 +67,9 @@ const bookmarkRecipe = async () => {
 
 // Function to determine the image source with "character(0)" check
 const getImageUrl = (recipe: any) => {
-  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
+  return recipe.image_url && recipe.image_url !== 'character(0)'
+    ? recipe.image_url
+    : PLACEHOLDER_IMAGE
 }
 
 const handleImageError = (recipeId: number) => {
@@ -87,98 +91,91 @@ onMounted(() => {
 
 <template>
   <div class="modal-container">
-    <p v-if="feedbackMessage" :class="feedbackMessage.includes('Failed') ? 'error-message' : 'success-message'">
+    <div v-if="feedbackMessage"
+      :class="['alert', feedbackMessage.includes('Failed') ? 'alert-danger' : 'alert-success']">
       {{ feedbackMessage }}
-    </p>
+    </div>
 
     <div class="recipe-detail" v-if="localRecipe">
-      <div class="recipe-header">
-        <h1 class="recipe-title">{{ localRecipe.Name }}</h1>
-        <p class="recipe-meta">
+      <div class="recipe-header text-center mb-5">
+        <h1 class="recipe-title display-4 fw-bold">{{ localRecipe.Name }}</h1>
+        <p class="recipe-meta text-muted">
           By {{ localRecipe.AuthorName }} | Published: {{ localRecipe.DatePublished }}
         </p>
       </div>
 
-      <div class="recipe-content">
-        <div class="recipe-image">
-          <img :src="getImageUrl(localRecipe)" class="main-image" @error="handleImageError(localRecipe.RecipeId)" />
-          <button v-if="!showBookmarkSection" @click="toggleBookmarkSection" class="toggle-bookmark-button">
+      <div class="recipe-content row g-4">
+        <div class="recipe-image col-lg-5 col-md-12">
+          <img :src="getImageUrl(localRecipe)" class="main-image img-fluid rounded shadow-sm"
+            @error="handleImageError(localRecipe.RecipeId)" />
+          <button v-if="!showBookmarkSection" @click="toggleBookmarkSection" class="btn btn-primary w-100 mt-3">
             Bookmark
           </button>
-          <div class="info-card bookmark-section" v-if="showBookmarkSection">
-            <h2>Bookmark</h2>
-            <select v-model="selectedFolderId" class="folder-select">
+          <div class="bookmark-section card shadow-sm mt-3 p-3" v-if="showBookmarkSection">
+            <h2 class="h5 fw-bold">Bookmark</h2>
+            <select v-model="selectedFolderId" class="form-select mb-2">
               <option v-for="folder in folders" :value="folder.FolderId" :key="folder.FolderId">
                 {{ folder.Name }}
               </option>
             </select>
-            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="rating-input" />
-            <div class="bookmark-actions">
-              <button @click="bookmarkRecipe" class="bookmark-button">Bookmark</button>
-              <button @click="toggleBookmarkSection" class="cancel-button">Cancel</button>
+            <input v-model="rating" type="number" min="1" max="5" placeholder="Rate 1-5" class="form-control mb-2" />
+            <div class="d-flex gap-2">
+              <button @click="bookmarkRecipe" class="btn btn-success flex-fill">Bookmark</button>
+              <button @click="toggleBookmarkSection" class="btn btn-danger flex-fill">Cancel</button>
             </div>
           </div>
         </div>
 
-        <div class="recipe-info">
-          <div class="info-card">
-            <u>
-              <h2>Description</h2>
-            </u>
+        <div class="recipe-info col-lg-7 col-md-12">
+          <div class="info-card card shadow-sm p-4 mb-3">
+            <h2 class="h4 pb-3 fw-bold text-decoration-underline">Description</h2>
             <p>{{ localRecipe.Description || 'No description available.' }}</p>
           </div>
 
-          <div style="display: flex; gap: 20px">
-            <div class="info-card" v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
-              <u>
-                <h2>Time</h2>
-              </u>
-              <p v-if="localRecipe.PrepTime">Prep: {{ localRecipe.PrepTime }} minutes</p>
-              <p v-if="localRecipe.CookTime">Cook: {{ localRecipe.CookTime }} minutes</p>
-              <p v-if="localRecipe.TotalTime">Total: {{ localRecipe.TotalTime }} minutes</p>
+          <div class="d-flex gap-3 mb-3">
+            <div class="info-card card shadow-sm p-4 flex-fill"
+              v-if="localRecipe.PrepTime || localRecipe.CookTime || localRecipe.TotalTime">
+              <h2 class="h4 pb-3 fw-bold text-decoration-underline">Time</h2>
+              <p v-if="localRecipe.PrepTime"><b>Prep:</b> {{ localRecipe.PrepTime }} minutes</p>
+              <p v-if="localRecipe.CookTime"><b>Cook:</b> {{ localRecipe.CookTime }} minutes</p>
+              <p v-if="localRecipe.TotalTime"><b>Total:</b> {{ localRecipe.TotalTime }} minutes</p>
             </div>
 
-            <div class="info-card" v-if="localRecipe.RecipeIngredientParts">
-              <u>
-                <h2>Ingredients</h2>
-              </u>
-              <ul>
-                <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts" :key="index">
+            <div class="info-card card shadow-sm p-4 flex-fill" v-if="localRecipe.RecipeIngredientParts">
+              <h2 class="h4 pb-3 fw-bold text-decoration-underline">Ingredients</h2>
+              <ul class="list-group list-group-flush">
+                <li v-for="(ingredient, index) in localRecipe.RecipeIngredientParts" :key="index"
+                  class="list-group-item">
                   {{ localRecipe.RecipeIngredientQuantities?.[index] || '' }} {{ ingredient }}
                 </li>
               </ul>
             </div>
           </div>
 
-          <div class="info-card" v-if="localRecipe.RecipeInstructions">
-            <u>
-              <h2>Instructions</h2>
-            </u>
-            <ol>
-              <li v-for="(step, index) in localRecipe.RecipeInstructions" :key="index">
+          <div class="info-card card shadow-sm p-4 mb-3" v-if="localRecipe.RecipeInstructions">
+            <h2 class="h4 pb-3 fw-bold text-decoration-underline">Instructions</h2>
+            <ol class="list-group list-group-numbered">
+              <li v-for="(step, index) in localRecipe.RecipeInstructions" :key="index" class="list-group-item">
                 {{ step }}
               </li>
             </ol>
           </div>
 
-          <div class="info-card" v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
-            <u>
-              <h2>Nutrition (per serving)</h2>
-            </u>
-            <p v-if="localRecipe.Calories">Calories: {{ localRecipe.Calories }} kcal</p>
-            <p v-if="localRecipe.ProteinContent">Protein: {{ localRecipe.ProteinContent }} g</p>
-            <p v-if="localRecipe.FatContent">Fat: {{ localRecipe.FatContent }} g</p>
-            <p v-if="localRecipe.CarbohydrateContent">
-              Carbs: {{ localRecipe.CarbohydrateContent }} g
-            </p>
-            <p v-if="localRecipe.SugarContent">Sugar: {{ localRecipe.SugarContent }} g</p>
-            <p v-if="localRecipe.FiberContent">Fiber: {{ localRecipe.FiberContent }} g</p>
+          <div class="info-card card shadow-sm p-4"
+            v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent">
+            <h2 class="h4 pb-3 fw-bold text-decoration-underline">Nutrition (per serving)</h2>
+            <p v-if="localRecipe.Calories"><b>Calories:</b> {{ localRecipe.Calories }} kcal</p>
+            <p v-if="localRecipe.ProteinContent"><b>Protein:</b> {{ localRecipe.ProteinContent }} g</p>
+            <p v-if="localRecipe.FatContent"><b>Fat:</b> {{ localRecipe.FatContent }} g</p>
+            <p v-if="localRecipe.CarbohydrateContent"><b>Carbs:</b> {{ localRecipe.CarbohydrateContent }} g</p>
+            <p v-if="localRecipe.SugarContent"><b>Sugar:</b> {{ localRecipe.SugarContent }} g</p>
+            <p v-if="localRecipe.FiberContent"><b>Fiber:</b> {{ localRecipe.FiberContent }} g</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="loading" v-else>
+    <div class="text-center p-4 text-muted" v-else>
       <p>Loading recipe details...</p>
     </div>
   </div>
@@ -189,209 +186,38 @@ onMounted(() => {
   font-family: 'Arial', sans-serif;
 }
 
-.success-message {
-  color: #28a745;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.error-message {
-  color: #dc3545;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.recipe-header {
-  text-align: center;
-  margin-bottom: 40px;
+.main-image {
+  height: 400px;
+  object-fit: cover;
 }
 
 .recipe-title {
-  font-size: 36px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
   text-transform: capitalize;
 }
 
-.recipe-meta {
-  font-size: 16px;
-  color: #666;
-  margin-top: 10px;
-}
-
-.recipe-content {
-  display: flex;
-  gap: 40px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.recipe-image {
-  flex: 1;
-  min-width: 300px;
-  max-width: 500px;
-  position: relative;
-}
-
-.main-image {
-  width: 100%;
-  height: 400px;
-  object-fit: cover;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.recipe-info {
-  flex: 2;
-  min-width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 .info-card {
-  background: #fff;
-  width: 100%;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition:
-    transform 0.3s,
-    box-shadow 0.3s;
+  transition: box-shadow 0.3s;
 }
 
-.info-card h2 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #444;
-  margin-top: 0;
-  margin-bottom: 10px;
+.info-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
-.info-card p {
-  font-size: 16px;
-  color: #666;
-  line-height: 1.6;
-  margin: 5px 0;
-}
-
-.info-card ul {
-  list-style-type: disc;
-  padding-left: 20px;
-  margin: 0;
-}
-
-.info-card li {
-  font-size: 16px;
-  color: #666;
-  line-height: 1.6;
-}
-
-.bookmark-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.folder-select {
-  padding: 8px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.rating-input {
-  padding: 8px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 100px;
-}
-
-.bookmark-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.bookmark-button {
-  padding: 10px;
-  font-size: 16px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.btn-primary,
+.btn-success,
+.btn-danger {
   transition: background-color 0.3s;
-  flex: 1;
 }
 
-.bookmark-button:hover {
-  background-color: #218838;
-}
-
-.cancel-button {
-  padding: 10px;
-  font-size: 16px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  flex: 1;
-}
-
-.cancel-button:hover {
-  background-color: #c82333;
-}
-
-.toggle-bookmark-button {
-  padding: 8px 16px;
-  width: 100%;
-  font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 10px;
-}
-
-.toggle-bookmark-button:hover {
+.btn-primary:hover {
   background-color: #0056b3;
 }
 
-.loading {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-  color: #888;
+.btn-success:hover {
+  background-color: #218838;
 }
 
-@media (max-width: 768px) {
-  .recipe-content {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .recipe-image {
-    max-width: 100%;
-  }
-
-  .recipe-title {
-    font-size: 28px;
-  }
-
-  .info-card h2 {
-    font-size: 20px;
-  }
-
-  .info-card p,
-  .info-card li {
-    font-size: 14px;
-  }
+.btn-danger:hover {
+  background-color: #c82333;
 }
 </style>

@@ -1,3 +1,5 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
+<!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <script setup lang="ts">
 import { ref, onMounted, onActivated } from 'vue'
 import axios from 'axios'
@@ -173,7 +175,9 @@ const onDragOver = (event: DragEvent) => {
 
 // Function to determine the image source with "character(0)" check
 const getImageUrl = (bookmark: any) => {
-  return bookmark.image_url && bookmark.image_url !== 'character(0)' ? bookmark.image_url : PLACEHOLDER_IMAGE
+  return bookmark.image_url && bookmark.image_url !== 'character(0)'
+    ? bookmark.image_url
+    : PLACEHOLDER_IMAGE
 }
 
 const handleImageError = (bookmarkId: number) => {
@@ -196,82 +200,89 @@ onActivated(fetchFoldersAndBookmarks)
 <template>
   <NavigationBar />
 
-  <div class="container">
-    <h1 class="page-title">My Bookmarks</h1>
-    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+  <div class="container mt-5 mb-5 pt-5 pb-5">
+    <h1 class="page-title display-4 fw-bold text-center mb-4">Bookmarks</h1>
+    <p v-if="errorMessage" class="alert alert-danger text-center">{{ errorMessage }}</p>
 
-    <div class="create-folder">
-      <input v-model="newFolderName" type="text" placeholder="New folder name" class="folder-input"
+    <div class="create-folder d-flex justify-content-center gap-3 mb-4">
+      <input v-model="newFolderName" type="text" placeholder="New folder name" class="form-control w-25"
         @keyup.enter="createFolder" />
-      <button @click="createFolder" class="create-button">Create Folder</button>
+      <button @click="createFolder" class="btn btn-success">Create Folder</button>
     </div>
 
-    <div class="folder-list">
-      <div v-for="folder in folders" :key="folder.FolderId" class="folder-card"
-        :class="{ 'draggable-target': editingFolder[folder.FolderId] }" @drop="onDrop($event, folder.FolderId)"
-        @dragover="onDragOver($event)">
-        <div v-if="editingFolderId === folder.FolderId && editingFolder[folder.FolderId]" class="edit-mode">
-          <input v-model="editedFolderName" type="text" class="folder-input" @keyup.enter="saveEdit(folder.FolderId)" />
-          <button @click="saveEdit(folder.FolderId)" class="save-button">Save</button>
-          <button @click="cancelEdit" class="cancel-button">Cancel</button>
-        </div>
-        <div v-else class="folder-content">
-          <h3 class="folder-name">
-            {{ folder.Name }} <br />
-            <i>({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg:
-              {{ folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})</i>
-          </h3>
-          <div class="folder-actions">
-            <button v-if="editingFolder[folder.FolderId]" @click="deleteFolder(folder.FolderId)" class="delete-button">
-              Delete
-            </button>
-            <button v-if="editingFolder[folder.FolderId]" @click="startEditing(folder)" class="edit-button">
-              Edit Name
-            </button>
-            <button @click="toggleEditingFolder(folder.FolderId)" class="toggle-edit-button">
-              {{ editingFolder[folder.FolderId] ? 'Done' : 'Edit' }}
-            </button>
-          </div>
-        </div>
-        <div class="bookmarks-list">
-          <div v-if="bookmarks[folder.FolderId] && bookmarks[folder.FolderId].length > 0" class="bookmark-items">
-            <div v-for="bookmark in bookmarks[folder.FolderId]" :key="bookmark.BookmarkId" class="bookmark-item"
-              :draggable="editingFolder[folder.FolderId]" @dragstart="
-                editingFolder[folder.FolderId]
-                  ? onDragStart($event, bookmark.BookmarkId, folder.FolderId)
-                  : null
-                ">
-              <div class="bookmark-content">
-                <img :src="getImageUrl(bookmark)" class="bookmark-image"
-                  @error="handleImageError(bookmark.BookmarkId)" />
-                <div class="bookmark-info">
-                  <p class="bookmark-name">{{ bookmark.Name }}</p>
-                  <div v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]" class="rating-edit">
-                    <input v-model.number="bookmark.Rating" type="number" min="1" max="5" class="rating-input" />
-                    <button @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
-                      class="save-rating">
-                      Save
-                    </button>
-                    <button @click="cancelEditingRating(bookmark.BookmarkId)" class="cancel-rating">
-                      Cancel
+    <div class="folder-list row row-cols-1 row-cols-lg-2 g-4">
+      <div v-for="folder in folders" :key="folder.FolderId" class="col">
+        <div class="folder-card card shadow-sm h-100" :class="{ 'bg-light': editingFolder[folder.FolderId] }"
+          @drop="onDrop($event, folder.FolderId)" @dragover="onDragOver($event)">
+          <div class="card-body">
+            <div v-if="editingFolderId === folder.FolderId && editingFolder[folder.FolderId]"
+              class="edit-mode d-flex gap-2">
+              <input v-model="editedFolderName" type="text" class="form-control"
+                @keyup.enter="saveEdit(folder.FolderId)" />
+              <button @click="saveEdit(folder.FolderId)" class="btn btn-success">Save</button>
+              <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+            </div>
+            <div v-else class="folder-content d-flex justify-content-between align-items-center">
+              <h3 class="folder-name card-title fw-bold">
+                {{ folder.Name }} <br />
+                <small class="text-muted">
+                  ({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg:
+                  {{ folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})
+                </small>
+              </h3>
+              <div class="folder-actions d-flex gap-2">
+                <button v-if="editingFolder[folder.FolderId]" @click="deleteFolder(folder.FolderId)"
+                  class="btn btn-danger">
+                  Delete
+                </button>
+                <button v-if="editingFolder[folder.FolderId]" @click="startEditing(folder)" class="btn btn-info">
+                  Edit Name
+                </button>
+                <button @click="toggleEditingFolder(folder.FolderId)" class="btn btn-primary">
+                  {{ editingFolder[folder.FolderId] ? 'Done' : 'Edit' }}
+                </button>
+              </div>
+            </div>
+            <div class="bookmarks-list mt-3">
+              <div v-if="bookmarks[folder.FolderId] && bookmarks[folder.FolderId].length > 0" class="bookmark-items">
+                <div v-for="bookmark in bookmarks[folder.FolderId]" :key="bookmark.BookmarkId"
+                  class="bookmark-item card mb-2" :draggable="editingFolder[folder.FolderId]"
+                  @dragstart="editingFolder[folder.FolderId] ? onDragStart($event, bookmark.BookmarkId, folder.FolderId) : null">
+                  <div class="card-body d-flex align-items-center">
+                    <img :src="getImageUrl(bookmark)" class="bookmark-image rounded me-3"
+                      @error="handleImageError(bookmark.BookmarkId)" />
+                    <div class="bookmark-info flex-grow-1">
+                      <p class="bookmark-name card-text fw-medium mb-1">{{ bookmark.Name }}</p>
+                      <div v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]"
+                        class="rating-edit d-flex gap-2">
+                        <input v-model.number="bookmark.Rating" type="number" min="1" max="5"
+                          class="form-control w-25" />
+                        <button @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
+                          class="btn btn-success btn-sm">
+                          Save
+                        </button>
+                        <button @click="cancelEditingRating(bookmark.BookmarkId)" class="btn btn-secondary btn-sm">
+                          Cancel
+                        </button>
+                      </div>
+                      <p v-else class="bookmark-rating card-text text-muted mb-0">
+                        Rating: {{ bookmark.Rating }} / 5
+                        <button v-if="editingFolder[folder.FolderId]" @click="startEditingRating(bookmark.BookmarkId)"
+                          class="btn btn-warning btn-sm ms-2">
+                          Edit
+                        </button>
+                      </p>
+                    </div>
+                    <button v-if="editingFolder[folder.FolderId]"
+                      @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)" class="btn btn-danger btn-sm ms-2">
+                      X
                     </button>
                   </div>
-                  <p v-else class="bookmark-rating">
-                    Rating: {{ bookmark.Rating }} / 5
-                    <button v-if="editingFolder[folder.FolderId]" @click="startEditingRating(bookmark.BookmarkId)"
-                      class="edit-rating">
-                      Edit
-                    </button>
-                  </p>
                 </div>
               </div>
-              <button v-if="editingFolder[folder.FolderId]"
-                @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)" class="delete-bookmark-button">
-                X
-              </button>
+              <p v-else class="text-muted mt-2">No bookmarks yet</p>
             </div>
           </div>
-          <p v-else class="placeholder">No bookmarks yet</p>
         </div>
       </div>
     </div>
@@ -280,68 +291,10 @@ onActivated(fetchFoldersAndBookmarks)
 
 <style scoped>
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  margin-top: 40px;
-  padding: 40px 20px;
   font-family: 'Arial', sans-serif;
 }
 
-.page-title {
-  font-size: 36px;
-  font-weight: 700;
-  color: #333;
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.error-message {
-  color: #dc3545;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.create-folder {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-  justify-content: center;
-}
-
-.folder-input {
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 300px;
-}
-
-.create-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.create-button:hover {
-  background-color: #218838;
-}
-
-.folder-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(500px, 1fr));
-  gap: 20px;
-}
-
 .folder-card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s;
 }
 
@@ -349,217 +302,46 @@ onActivated(fetchFoldersAndBookmarks)
   transform: translateY(-5px);
 }
 
-.folder-card.draggable-target {
-  background-color: #f0f0f0;
-}
-
-.folder-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.folder-name {
-  font-size: 20px;
-  font-weight: 600;
-  color: #444;
-  margin: 0;
-}
-
-.folder-actions {
-  display: flex;
-  gap: 10px;
-  height: 40px;
-}
-
-.toggle-edit-button,
-.edit-button,
-.delete-button,
-.save-button,
-.cancel-button,
-.delete-bookmark-button,
-.edit-rating,
-.save-rating,
-.cancel-rating {
-  padding: 5px 10px;
-  font-size: 14px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.toggle-edit-button {
-  background-color: #007bff;
-  color: white;
-}
-
-.toggle-edit-button:hover {
-  background-color: #0056b3;
-}
-
-.edit-button {
-  background-color: #17a2b8;
-  color: white;
-}
-
-.edit-button:hover {
-  background-color: #138496;
-}
-
-.delete-button {
-  background-color: #dc3545;
-  color: white;
-}
-
-.delete-button:hover {
-  background-color: #c82333;
-}
-
-.save-button {
-  background-color: #28a745;
-  color: white;
-}
-
-.save-button:hover {
-  background-color: #218838;
-}
-
-.cancel-button {
-  background-color: #6c757d;
-  color: white;
-}
-
-.cancel-button:hover {
-  background-color: #5a6268;
-}
-
-.delete-bookmark-button {
-  background-color: #dc3545;
-  color: white;
-  margin-left: 10px;
-}
-
-.delete-bookmark-button:hover {
-  background-color: #c82333;
-}
-
-.edit-rating {
-  background-color: #ffc107;
-  color: black;
-}
-
-.edit-rating:hover {
-  background-color: #e0a800;
-}
-
-.save-rating {
-  background-color: #28a745;
-  color: white;
-}
-
-.save-rating:hover {
-  background-color: #218838;
-}
-
-.cancel-rating {
-  background-color: #6c757d;
-  color: white;
-}
-
-.cancel-rating:hover {
-  background-color: #5a6268;
-}
-
-.edit-mode {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.bookmarks-list {
-  margin-top: 15px;
-}
-
-.bookmark-items {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.bookmark-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background: #f9f9f9;
-  border-radius: 4px;
-  height: 120px;
-}
-
 .bookmark-item[draggable='true'] {
   cursor: move;
-}
-
-.bookmark-content {
-  display: flex;
-  align-items: center;
-  flex: 1;
 }
 
 .bookmark-image {
   width: 60px;
   height: 60px;
   object-fit: cover;
-  border-radius: 4px;
-  margin-right: 10px;
 }
 
-.bookmark-info {
-  flex: 1;
+.btn-success,
+.btn-danger,
+.btn-primary,
+.btn-info,
+.btn-warning,
+.btn-secondary {
+  transition: background-color 0.3s;
 }
 
-.bookmark-name {
-  font-size: 16px;
-  font-weight: 500;
-  margin: 0;
+.btn-success:hover {
+  background-color: #218838;
 }
 
-.bookmark-rating {
-  font-size: 14px;
-  color: #666;
-  margin: 5px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.btn-danger:hover {
+  background-color: #c82333;
 }
 
-.rating-edit {
-  display: flex;
-  gap: 5px;
-  align-items: center;
+.btn-primary:hover {
+  background-color: #0056b3;
 }
 
-.rating-input {
-  width: 50px;
-  padding: 5px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.btn-info:hover {
+  background-color: #138496;
 }
 
-.placeholder {
-  font-size: 14px;
-  color: #888;
-  margin-top: 10px;
+.btn-warning:hover {
+  background-color: #e0a800;
 }
 
-@media (max-width: 768px) {
-  .folder-list {
-    grid-template-columns: 1fr;
-  }
-
-  .folder-input {
-    width: 100%;
-  }
+.btn-secondary:hover {
+  background-color: #5a6268;
 }
 </style>
