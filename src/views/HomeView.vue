@@ -143,19 +143,25 @@ onMounted(async () => {
 
 <template>
   <NavigationBar />
-
   <div class="container mt-5 mb-5 pt-5 pb-5">
     <div class="text-center mb-4">
       <h1 class="display-5 fw-bold">You may like these</h1>
     </div>
 
-    <!-- Recommendation Carousel -->
     <div class="recommendation-container mb-5 px-2 py-3">
       <div id="recommendationCarousel" class="carousel slide">
+        <!-- Carousel Indicators (Bullets) -->
+        <div class="carousel-indicators" v-if="groupedRecommendations.length > 1">
+          <button v-for="(group, index) in groupedRecommendations" :key="index" type="button"
+            :data-bs-target="'#recommendationCarousel'" :data-bs-slide-to="index" :class="{ 'active': index === 0 }"
+            aria-current="true" :aria-label="'Slide ' + (index + 1)">
+          </button>
+        </div>
+
         <div class="carousel-inner">
           <div v-if="recommendedRecipes.length === 0" class="carousel-item active">
             <div class="text-center p-4 text-muted w-100">
-              <p>{{ recommendationMessage || 'No new recommendations available. Explore more recipes!' }}</p>
+              <p>{{ recommendationMessage }}</p>
             </div>
           </div>
           <div v-else v-for="(group, index) in groupedRecommendations" :key="index"
@@ -226,19 +232,13 @@ onMounted(async () => {
     </div>
 
     <div class="pagination d-flex justify-content-center align-items-center gap-3 mt-4" v-if="totalPages > 1">
-      <button class="btn btn-primary" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
-        Previous
-      </button>
-      <span class="text-muted">
-        Page {{ currentPage }} of {{ totalPages }} ({{ totalResults }} results)
-      </span>
-      <button class="btn btn-primary" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
-        Next
-      </button>
+      <button class="btn btn-primary" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">Previous</button>
+      <span class="text-muted">Page {{ currentPage }} of {{ totalPages }} ({{ totalResults }} results)</span>
+      <button class="btn btn-primary" :disabled="currentPage === totalPages"
+        @click="goToPage(currentPage + 1)">Next</button>
     </div>
   </div>
 
-  <!-- Modal with corrected backdrop handling -->
   <Teleport to="body" v-if="showModal">
     <div class="modal fade show" id="recipeModal" tabindex="-1" aria-labelledby="recipeModalLabel" aria-hidden="false"
       style="display: block; z-index: 1050;">
@@ -336,7 +336,9 @@ onMounted(async () => {
   background-color: #007bff;
   border-radius: 50%;
   opacity: 0.8;
-  transition: opacity 0.3s, background-color 0.3s;
+  transition:
+    opacity 0.3s,
+    background-color 0.3s;
 }
 
 .carousel-control-prev:hover,
@@ -359,5 +361,33 @@ onMounted(async () => {
 
 .carousel-control-next {
   right: -50px;
+}
+
+.carousel-indicators {
+  position: absolute;
+  bottom: -40px;
+  /* Position below the carousel */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0;
+  margin: 0;
+}
+
+.carousel-indicators button {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #bbb;
+  border: none;
+  margin: 0 5px;
+  transition: background-color 0.3s;
+}
+
+.carousel-indicators .active {
+  background-color: #007bff;
+}
+
+.carousel-indicators button:hover {
+  background-color: #0056b3;
 }
 </style>

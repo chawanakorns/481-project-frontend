@@ -30,7 +30,8 @@ const formatTime = (minutes: number | null | undefined): string => {
   const remainingMinutes = minutes % 60
   let result = ''
   if (hours > 0) result += `${hours} hour${hours > 1 ? 's' : ''}`
-  if (remainingMinutes > 0) result += `${hours > 0 ? ' ' : ''}${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`
+  if (remainingMinutes > 0)
+    result += `${hours > 0 ? ' ' : ''}${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`
   return result.trim()
 }
 
@@ -54,7 +55,7 @@ const formatQuantity = (quantity: string): string => {
     '1/8': '⅛',
     '3/8': '⅜',
     '5/8': '⅝',
-    '7/8': '⅞'
+    '7/8': '⅞',
   }
 
   if (fractionMap[fraction]) {
@@ -108,7 +109,9 @@ const bookmarkRecipe = async () => {
 }
 
 const getImageUrl = (recipe: any) => {
-  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE
+  return recipe.image_url && recipe.image_url !== 'character(0)'
+    ? recipe.image_url
+    : PLACEHOLDER_IMAGE
 }
 
 const handleImageError = (recipeId: number) => {
@@ -158,15 +161,16 @@ onMounted(() => {
             </select>
             <h6 class="mt-3 fw-semibold">Score:</h6>
             <div class="star-rating mb-2">
-              <Icon v-for="star in 5" :key="star" :icon="star <= rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
-                star <= rating ? 'text-warning' : 'text-muted',
-                'me-1'
-              ]" @click="rating = star" style="cursor: pointer; font-size: 1.2rem;" />
+              <Icon v-for="star in 5" :key="star" :icon="star <= rating ? 'mdi:star' : 'mdi:star-outline'"
+                :class="[star <= rating ? 'text-warning' : 'text-muted', 'me-1']" @click="rating = star"
+                style="cursor: pointer; font-size: 1.2rem" />
               <span class="ms-2 text-muted">({{ rating }}/5)</span>
             </div>
             <div class="d-flex gap-2 mt-3">
               <button @click="bookmarkRecipe" class="btn btn-success flex-fill">Bookmark</button>
-              <button @click="toggleBookmarkSection" class="btn btn-danger flex-fill">Cancel</button>
+              <button @click="toggleBookmarkSection" class="btn btn-danger flex-fill">
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -182,11 +186,19 @@ onMounted(() => {
               <h2 class="h4 pb-3 fw-bold text-decoration-underline">Time</h2>
               <p v-if="localRecipe.PrepTime"><b>Prep:</b> {{ formatTime(localRecipe.PrepTime) }}</p>
               <p v-if="localRecipe.CookTime"><b>Cook:</b> {{ formatTime(localRecipe.CookTime) }}</p>
-              <p v-if="localRecipe.TotalTime"><b>Total:</b> {{ formatTime(localRecipe.TotalTime) }}</p>
+              <p v-if="localRecipe.TotalTime">
+                <b>Total:</b> {{ formatTime(localRecipe.TotalTime) }}
+              </p>
             </div>
 
-            <div class="info-card card shadow-sm p-4 w-100% flex-fill"
-              v-if="localRecipe.Calories || localRecipe.ProteinContent || localRecipe.FatContent || localRecipe.CarbohydrateContent || localRecipe.SugarContent || localRecipe.FiberContent">
+            <div class="info-card card shadow-sm p-4 w-100% flex-fill" v-if="
+              localRecipe.Calories ||
+              localRecipe.ProteinContent ||
+              localRecipe.FatContent ||
+              localRecipe.CarbohydrateContent ||
+              localRecipe.SugarContent ||
+              localRecipe.FiberContent
+            ">
               <h2 class="h4 pb-3 fw-bold text-decoration-underline">Nutrition (per serving)</h2>
               <table class="table table-striped">
                 <tbody>
@@ -233,9 +245,10 @@ onMounted(() => {
                   <tr v-for="(ingredient, index) in localRecipe.RecipeIngredientParts" :key="index">
                     <td>{{ ingredient }}</td>
                     <td class="text-center">
-                      <span
-                        v-if="localRecipe.RecipeIngredientQuantities?.[index] && localRecipe.RecipeIngredientQuantities[index] !== 'NA'"
-                        class="text-muted">
+                      <span v-if="
+                        localRecipe.RecipeIngredientQuantities?.[index] &&
+                        localRecipe.RecipeIngredientQuantities[index] !== 'NA'
+                      " class="text-muted">
                         {{ formatQuantity(localRecipe.RecipeIngredientQuantities[index]) }}
                       </span>
                       <span v-else>—</span>

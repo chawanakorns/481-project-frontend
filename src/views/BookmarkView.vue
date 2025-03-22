@@ -1,11 +1,11 @@
 <!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
-<!-- BookmarkView.vue -->
 <script setup lang="ts">
 import { ref, onMounted, onActivated } from 'vue'
 import axios from 'axios'
 import NavigationBar from '@/components/NavigationBar.vue'
 import { Icon } from '@iconify/vue'
+import DetailView from '@/views/DetailView.vue'
 import placeholderImage from '@/assets/placeholder.jpg'
 
 const PLACEHOLDER_IMAGE = placeholderImage
@@ -20,6 +20,10 @@ const errorMessage = ref<string>('')
 const editingRating = ref<{ [key: number]: boolean }>({})
 const editingFolder = ref<{ [key: number]: boolean }>({})
 const imageLoadError = ref<{ [key: string]: boolean }>({})
+const suggestions = ref<any[]>([])
+const showSuggestionsModal = ref(false)
+const selectedRecipe = ref<any | null>(null)
+const showRecipeModal = ref(false)
 
 const fetchFoldersAndBookmarks = async () => {
   try {
@@ -28,7 +32,30 @@ const fetchFoldersAndBookmarks = async () => {
     bookmarks.value = response.data.bookmarks
     errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to fetch folders or bookmarks. Please try again.'
+    console.error('Error fetching folders and bookmarks:', error)
+    errorMessage.value = 'Failed to fetch folders or bookmarks.'
+  }
+}
+
+const fetchSuggestions = async (folderId: number) => {
+  try {
+    const response = await axios.get('http://localhost:5000/recommendations', {
+      params: {
+        user_id: userId.value,
+        folder_id: folderId,
+        limit: 10
+      }
+    })
+    suggestions.value = response.data.recommendations
+    errorMessage.value = response.data.message || ''
+    if (suggestions.value.length > 0) {
+      showSuggestionsModal.value = true
+    } else {
+      errorMessage.value = response.data.message || 'No suggestions available.'
+    }
+  } catch (error) {
+    console.error('Error fetching suggestions:', error)
+    errorMessage.value = error.response?.data?.message || 'Failed to fetch suggestions.'
   }
 }
 
@@ -172,18 +199,36 @@ const onDragOver = (event: DragEvent) => {
   event.preventDefault()
 }
 
-const getImageUrl = (bookmark: any) => {
-  return bookmark.image_url && bookmark.image_url !== 'character(0)' ? bookmark.image_url : PLACEHOLDER_IMAGE
+const openRecipeModal = (recipe: any) => {
+  selectedRecipe.value = recipe
+  showRecipeModal.value = true
 }
 
-const handleImageError = (bookmarkId: number) => {
-  imageLoadError.value[bookmarkId] = true
+const closeRecipeModal = () => {
+  showRecipeModal.value = false
+  selectedRecipe.value = null
+}
+
+const closeSuggestionsModal = () => {
+  showSuggestionsModal.value = false
+  suggestions.value = []
+}
+
+const getImageUrl = (item: any) => {
+  return item.image_url && item.image_url !== 'character(0)' ? item.image_url : PLACEHOLDER_IMAGE
+}
+
+const handleImageError = (id: number) => {
+  imageLoadError.value[id] = true
   const folderId = Object.keys(bookmarks.value).find((key: any) =>
-    bookmarks.value[key].some((b: any) => b.BookmarkId === bookmarkId)
-  )
+    bookmarks.value[key].some((b: any) => b.BookmarkId === id)
+  ) || suggestions.value.find((r) => r.RecipeId === id)?.RecipeId
   if (folderId) {
-    const bookmark = bookmarks.value[parseInt(folderId)].find((b) => b.BookmarkId === bookmarkId)
+    const bookmark = bookmarks.value[parseInt(folderId)]?.find((b) => b.BookmarkId === id)
     if (bookmark) bookmark.image_url = PLACEHOLDER_IMAGE
+  } else {
+    const suggestion = suggestions.value.find((r) => r.RecipeId === id)
+    if (suggestion) suggestion.image_url = PLACEHOLDER_IMAGE
   }
 }
 
@@ -193,7 +238,6 @@ onActivated(fetchFoldersAndBookmarks)
 
 <template>
   <NavigationBar />
-
   <div class="container mt-5 mb-5 pt-5 pb-5">
     <h1 class="page-title display-4 fw-bold text-center mb-4">Bookmarks</h1>
     <p v-if="errorMessage" class="alert alert-danger text-center">{{ errorMessage }}</p>
@@ -220,8 +264,8 @@ onActivated(fetchFoldersAndBookmarks)
               <h3 class="folder-name card-title fw-bold">
                 {{ folder.Name }} <br />
                 <small class="text-muted h5">
-                  ({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg:
-                  {{ folder.AvgRating ? folder.AvgRating.toFixed(1) : 'N/A' }})
+                  ({{ bookmarks[folder.FolderId]?.length || 0 }} items, Avg: {{ folder.AvgRating ?
+                    folder.AvgRating.toFixed(1) : 'N/A' }})
                 </small>
               </h3>
               <div class="folder-actions d-flex gap-2">
@@ -234,6 +278,11 @@ onActivated(fetchFoldersAndBookmarks)
                   <Icon icon="mdi:pencil-outline" style="font-size: 1.2rem;" />
                   <span class="fs-6">Edit Name</span>
                 </button>
+                <button v-if="!editingFolder[folder.FolderId]" @click="fetchSuggestions(folder.FolderId)"
+                  class="btn btn-secondary d-flex align-items-center gap-1">
+                  <Icon icon="mdi:lightbulb-outline" style="font-size: 1.2rem;" />
+                  <span class="fs-6">Suggestions</span>
+                </button>
                 <button @click="toggleEditingFolder(folder.FolderId)"
                   class="btn btn-primary d-flex align-items-center gap-1">
                   <Icon :icon="editingFolder[folder.FolderId] ? 'mdi:check' : 'mdi:edit'" style="font-size: 1.2rem;" />
@@ -244,11 +293,8 @@ onActivated(fetchFoldersAndBookmarks)
             <div class="bookmarks-list mt-3">
               <div v-if="bookmarks[folder.FolderId] && bookmarks[folder.FolderId].length > 0" class="bookmark-items">
                 <div v-for="bookmark in bookmarks[folder.FolderId]" :key="bookmark.BookmarkId"
-                  class="bookmark-item card mb-2" :draggable="editingFolder[folder.FolderId]" @dragstart="
-                    editingFolder[folder.FolderId]
-                      ? onDragStart($event, bookmark.BookmarkId, folder.FolderId)
-                      : null
-                    ">
+                  class="bookmark-item card mb-2" :draggable="editingFolder[folder.FolderId]"
+                  @dragstart="editingFolder[folder.FolderId] ? onDragStart($event, bookmark.BookmarkId, folder.FolderId) : null">
                   <div class="card-body d-flex align-items-center">
                     <img :src="getImageUrl(bookmark)" class="bookmark-image rounded me-3"
                       @error="handleImageError(bookmark.BookmarkId)" />
@@ -265,12 +311,9 @@ onActivated(fetchFoldersAndBookmarks)
                             ]" @click="bookmark.Rating = star" style="cursor: pointer; font-size: 1.2rem;" />
                         </div>
                         <button @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
-                          class="btn btn-success btn-sm">
-                          Save
-                        </button>
-                        <button @click="cancelEditingRating(bookmark.BookmarkId)" class="btn btn-secondary btn-sm">
-                          Cancel
-                        </button>
+                          class="btn btn-success btn-sm">Save</button>
+                        <button @click="cancelEditingRating(bookmark.BookmarkId)"
+                          class="btn btn-secondary btn-sm">Cancel</button>
                       </div>
                       <p v-else class="bookmark-rating card-text text-muted mb-0 d-flex align-items-center">
                         <span :class="['star-rating', { 'editable': false }]" class="me-2">
@@ -282,9 +325,7 @@ onActivated(fetchFoldersAndBookmarks)
                         </span>
                         ({{ bookmark.Rating }}/5)
                         <button v-if="editingFolder[folder.FolderId]" @click="startEditingRating(bookmark.BookmarkId)"
-                          class="btn btn-warning btn-sm ms-2">
-                          Edit
-                        </button>
+                          class="btn btn-warning btn-sm ms-2">Edit</button>
                       </p>
                     </div>
                     <button v-if="editingFolder[folder.FolderId]"
@@ -300,6 +341,56 @@ onActivated(fetchFoldersAndBookmarks)
         </div>
       </div>
     </div>
+
+    <!-- Suggestions Modal -->
+    <Teleport to="body" v-if="showSuggestionsModal">
+      <div class="modal fade show" id="suggestionsModal" tabindex="-1" aria-labelledby="suggestionsModalLabel"
+        style="display: block; z-index: 1050;">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style="z-index: 1051;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="suggestionsModalLabel">Suggested Recipes</h5>
+              <button type="button" class="btn-close" @click="closeSuggestionsModal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div v-if="suggestions.length === 0" class="text-center p-4 text-muted">
+                <p>{{ errorMessage || 'No suggestions available.' }}</p>
+              </div>
+              <div v-else class="row row-cols-1 row-cols-md-2 g-4">
+                <div v-for="recipe in suggestions" :key="recipe.RecipeId" class="col">
+                  <div class="card h-100" @click="openRecipeModal(recipe)">
+                    <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
+                    <div class="card-body">
+                      <h5 class="card-title fw-bold">{{ recipe.Name }}</h5>
+                      <p class="card-text text-muted">{{ recipe.Description || 'No description' }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-backdrop fade show" style="z-index: 1049;" @click="closeSuggestionsModal"></div>
+    </Teleport>
+
+    <!-- Recipe Details Modal -->
+    <Teleport to="body" v-if="showRecipeModal">
+      <div class="modal fade show" id="recipeModal" tabindex="-1" aria-labelledby="recipeModalLabel"
+        style="display: block; z-index: 1050;">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="z-index: 1051;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="btn-close" @click="closeRecipeModal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-5">
+              <DetailView :id="selectedRecipe.RecipeId.toString()" :recipe="selectedRecipe" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-backdrop fade show" style="z-index: 1049;" @click="closeRecipeModal"></div>
+    </Teleport>
   </div>
 </template>
 
@@ -324,6 +415,17 @@ onActivated(fetchFoldersAndBookmarks)
   width: 60px;
   height: 60px;
   object-fit: cover;
+}
+
+.card-img-top {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
 }
 
 .btn-success,

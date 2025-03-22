@@ -16,23 +16,17 @@
       <div class="collapse navbar-collapse" id="navbarContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link" href="/home">
-              <i class="bi bi-house"></i>Home
-            </a>
+            <a class="nav-link" href="/home"> <i class="bi bi-house"></i>Home </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/bookmarks">
-              <i class="bi bi-bookmark"></i>Bookmarks
-            </a>
+            <a class="nav-link" href="/bookmarks"> <i class="bi bi-bookmark"></i>Bookmarks </a>
           </li>
         </ul>
 
         <!-- Right-side actions -->
         <div class="d-flex align-items-center gap-3">
           <button class="btn btn-outline-primary position-relative">
-            <a class="nav-link" href="#">
-              <i class="bi bi-person-circle me-1"></i>Profile
-            </a>
+            <a class="nav-link" href="#"> <i class="bi bi-person-circle me-1"></i>Profile </a>
           </button>
           <button class="btn btn-primary">
             <a class="nav-link text-white" href="/logout">
@@ -55,7 +49,6 @@
 .navbar-brand {
   font-size: 1.5rem;
   transition: color 0.2s ease;
-
 }
 
 .navbar-brand:hover {
