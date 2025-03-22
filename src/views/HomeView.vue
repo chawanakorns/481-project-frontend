@@ -166,11 +166,11 @@ onMounted(async () => {
                   <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
                   <div class="card-body text-start">
                     <h5 class="card-title fw-bold">
-                      {{ recipe.Name ? (recipe.Name.length > 30 ? recipe.Name.substring(0, 28) + '...' : recipe.Name) :
+                      {{ recipe.Name ? (recipe.Name.length > 20 ? recipe.Name.substring(0, 25) + '...' : recipe.Name) :
                         'Name not loaded' }}
                     </h5>
                     <p class="card-text text-muted">
-                      {{ recipe.Description ? (recipe.Description.length > 34 ? recipe.Description.substring(0, 34) +
+                      {{ recipe.Description ? (recipe.Description.length > 20 ? recipe.Description.substring(0, 28) +
                         '...' : recipe.Description) : 'No description' }}
                     </p>
                   </div>
@@ -214,10 +214,10 @@ onMounted(async () => {
           <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
           <div class="card-body">
             <h5 class="card-title fw-bold">
-              {{ recipe.Name ? (recipe.Name.length > 30 ? recipe.Name.substring(0, 28) + '...' : recipe.Name) : '' }}
+              {{ recipe.Name ? (recipe.Name.length > 20 ? recipe.Name.substring(0, 25) + '...' : recipe.Name) : '' }}
             </h5>
             <p class="card-text text-muted">
-              {{ recipe.Description ? (recipe.Description.length > 34 ? recipe.Description.substring(0, 34) + '...' :
+              {{ recipe.Description ? (recipe.Description.length > 20 ? recipe.Description.substring(0, 28) + '...' :
                 recipe.Description) : 'No description' }}
             </p>
           </div>
