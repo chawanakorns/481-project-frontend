@@ -25,9 +25,6 @@ import { Icon } from '@iconify/vue'
           <a class="nav-link d-flex align-items-center" href="/bookmarks">
             <Icon icon="mdi:bookmark-outline" width="32" height="32" />
           </a>
-          <a class="nav-link d-flex align-items-center" href="#">
-            <Icon icon="mdi:account-circle-outline" width="32" height="32" />
-          </a>
           <button class="btn btn-primary">
             <a class="nav-link text-white d-flex align-items-center" href="/logout">
               <Icon icon="mdi:logout" /> Log out

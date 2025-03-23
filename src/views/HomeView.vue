@@ -2,8 +2,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '@/stores/api'; // Use the API client instead of axios directly
-import { useAuthStore } from '@/stores/auth'; // Use the auth store for token management
+import api from '@/stores/api';
+import { useAuthStore } from '@/stores/auth';
 import NavigationBar from '@/components/NavigationBar.vue';
 import DetailView from '@/views/DetailView.vue';
 import placeholderImage from '@/assets/placeholder.jpg';
@@ -13,7 +13,7 @@ const PLACEHOLDER_IMAGE = placeholderImage;
 const router = useRouter();
 const authStore = useAuthStore();
 
-const userId = ref(localStorage.getItem('user_id') || '1'); // Get userId from localStorage
+const userId = ref(localStorage.getItem('user_id') || '1');
 const filteredRecipes = ref<any[]>([]);
 const searchTerm = ref('');
 const correctedQuery = ref<string | null>(null);
@@ -27,7 +27,7 @@ const totalPages = ref(1);
 const totalResults = ref(0);
 const recommendedRecipes = ref<any[]>([]);
 const recommendationMessage = ref<string>('');
-const error = ref<string | null>(null); // Add error state for UI feedback
+const error = ref<string | null>(null);
 
 const itemsPerSlide = 4;
 
@@ -50,7 +50,7 @@ const fetchRecipes = async () => {
     filteredRecipes.value = response.recipes;
     totalPages.value = response.total_pages;
     totalResults.value = response.total_results;
-    error.value = null; // Clear any previous errors
+    error.value = null;
   } catch (err) {
     console.error('Error fetching recipes:', err);
     error.value = 'Failed to load recipes. Please try again later.';
@@ -76,7 +76,7 @@ const filterRecipes = async () => {
     totalPages.value = response.total_pages;
     totalResults.value = response.total_results;
     currentPage.value = response.current_page;
-    error.value = null; // Clear any previous errors
+    error.value = null;
   } catch (err) {
     console.error('Error filtering recipes:', err);
     error.value = 'Failed to filter recipes. Please try again.';
@@ -129,7 +129,7 @@ const fetchRecommendedRecipes = async () => {
       recommendationMessage.value =
         recommendationMessage.value || 'No new recommendations available. Explore more recipes!';
     }
-    error.value = null; // Clear any previous errors
+    error.value = null;
   } catch (err) {
     console.error('Error fetching recommended recipes:', err);
     recommendedRecipes.value = [];
@@ -149,8 +149,16 @@ const goToPage = (page: number) => {
   }
 };
 
+const shuffledHeroRecipes = computed(() => {
+  const recipesCopy = [...filteredRecipes.value];
+  for (let i = recipesCopy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [recipesCopy[i], recipesCopy[j]] = [recipesCopy[j], recipesCopy[i]];
+  }
+  return recipesCopy.slice(0, 6);
+});
+
 onMounted(async () => {
-  // Check if the user is authenticated
   if (!authStore.isAuthenticated()) {
     router.push('/login');
     return;
@@ -164,13 +172,41 @@ onMounted(async () => {
 <template>
   <NavigationBar />
   <div class="container mt-5 mb-5 pt-5 pb-5">
-    <!-- Display error message if any -->
     <div v-if="error" class="alert alert-danger text-center" role="alert">
       {{ error }}
     </div>
 
+    <div class="hero-carousel-container mb-5">
+      <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+        <div class="carousel-inner">
+          <div v-if="shuffledHeroRecipes.length === 0" class="carousel-item active">
+            <div class="text-center p-4 text-muted w-100">
+              <p>No recipes available to display</p>
+            </div>
+          </div>
+          <div v-else v-for="(recipe, index) in shuffledHeroRecipes" :key="recipe.RecipeId"
+            :class="['carousel-item', { 'active': index === 0 }]">
+            <img :src="getImageUrl(recipe)" class="d-block w-100 hero-image" @error="handleImageError(recipe.RecipeId)"
+              :alt="recipe.Name">
+            <div class="carousel-caption d-none d-md-block">
+              <h5>{{ recipe.Name }}</h5>
+              <p>{{ recipe.Description?.substring(0, 110) + '...' }}</p>
+            </div>
+          </div>
+        </div>
+        <button class="hero-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+          <span class="hero-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="hero-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+          <span class="hero-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
+    </div>
+
     <div class="text-start mb-4">
-      <h1 class="text-center fw-bold">You may like these</h1>
+      <h1 class="fw-bold">You may like these</h1>
     </div>
 
     <div class="recommendation-container mb-5 px-2 py-3">
@@ -180,7 +216,6 @@ onMounted(async () => {
             :data-bs-target="'#recommendationCarousel'" :data-bs-slide-to="index" :class="{ 'active': index === 0 }"
             aria-current="true" :aria-label="'Slide ' + (index + 1)"></button>
         </div>
-
         <div class="carousel-inner">
           <div v-if="recommendedRecipes.length === 0" class="carousel-item active">
             <div class="text-center p-4 text-muted w-100">
@@ -220,7 +255,7 @@ onMounted(async () => {
         </div>
         <button v-if="groupedRecommendations.length > 1" class="carousel-control-prev" type="button"
           data-bs-target="#recommendationCarousel" data-bs-slide="prev">
-          <span class="carousel-control-prev-icon " aria-hidden="true"></span>
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Previous</span>
         </button>
         <button v-if="groupedRecommendations.length > 1" class="carousel-control-next" type="button"
@@ -233,7 +268,7 @@ onMounted(async () => {
 
     <div style="margin-top: 5rem;">
       <div class="text-start my-4">
-        <h1 class="text-center fw-bold">Explore</h1>
+        <h1 class="fw-bold">Explore</h1>
       </div>
 
       <div class="search-body d-flex justify-content-center mb-4">
@@ -308,13 +343,140 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.card-img-top {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 8px 8px 0 0;
+/* Styles shared by both carousels */
+.carousel-inner {
+  text-align: center;
 }
 
+/* Hero Carousel Specific Styles */
+.hero-carousel-container {
+  width: 100%;
+  max-width: 1248px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+}
+
+.hero-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.carousel-caption {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+  padding: 10px 15px;
+  bottom: 20px;
+}
+
+.carousel-caption h5 {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.carousel-caption p {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+/* Hero Carousel Control Styles */
+/* Hero Carousel Specific Styles (unchanged) */
+.hero-carousel-container {
+  width: 100%;
+  max-width: 1248px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+}
+
+.hero-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.carousel-caption {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+  padding: 10px 15px;
+  bottom: 20px;
+}
+
+.carousel-caption h5 {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.carousel-caption p {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+/* Hero Carousel Control Styles (updated) */
+.hero-control-prev,
+.hero-control-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background-color: #eb5216;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease, background-color 0.3s ease;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.hero-carousel-container:hover .hero-control-prev,
+.hero-carousel-container:hover .hero-control-next {
+  opacity: 0.8;
+}
+
+.hero-control-prev:hover,
+.hero-control-next:hover {
+  opacity: 1;
+  background-color: #d35320;
+}
+
+.hero-control-prev {
+  left: 20px;
+}
+
+.hero-control-next {
+  right: 20px;
+}
+
+.hero-control-prev-icon,
+.hero-control-next-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center;
+}
+
+/* Using Bootstrap's default SVG icons as background images (unchanged) */
+.hero-control-prev-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3e%3c/svg%3e");
+}
+
+.hero-control-next-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+/* Recommendation Carousel Specific Styles */
 .recommendation-container,
 .item {
   width: 100%;
@@ -323,8 +485,86 @@ onMounted(async () => {
   margin-right: auto;
 }
 
-.carousel-inner {
-  text-align: center;
+/* Recommendation Carousel Control Styles */
+.carousel-control-prev,
+.carousel-control-next {
+  width: 40px;
+  height: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #eb5216;
+  border-radius: 50%;
+  opacity: 0.8;
+  transition: opacity 0.3s, background-color 0.3s;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  opacity: 1;
+  background-color: #d35320;
+}
+
+.carousel-control-prev {
+  left: -50px;
+}
+
+.carousel-control-next {
+  right: -50px;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center;
+}
+
+/* Using Bootstrap's default SVG icons as background images */
+.carousel-control-prev-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3e%3c/svg%3e");
+}
+
+.carousel-control-next-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+/* Recommendation Carousel Indicators */
+.carousel-indicators {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0;
+  margin: 0;
+}
+
+.carousel-indicators button {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #bbb;
+  border: none;
+  margin: 0 5px;
+  transition: background-color 0.3s;
+}
+
+.carousel-indicators .active {
+  background-color: #eb5216;
+}
+
+.carousel-indicators button:hover {
+  background-color: #d35320;
+}
+
+/* Other Shared Styles */
+.card-img-top {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
 }
 
 .recommendation-card,
@@ -375,66 +615,5 @@ onMounted(async () => {
 .modal-backdrop {
   pointer-events: auto;
   opacity: 0.5;
-}
-
-.carousel-control-prev,
-.carousel-control-next {
-  width: 40px;
-  height: 40px;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #eb5216;
-  border-radius: 50%;
-  opacity: 0.8;
-  transition: opacity 0.3s, background-color 0.3s;
-}
-
-.carousel-control-prev:hover,
-.carousel-control-next:hover {
-  opacity: 1;
-  background-color: #d35320;
-}
-
-.carousel-control-prev-icon,
-.carousel-control-next-icon {
-  width: 20px;
-  height: 20px;
-  background-size: 100%, 100%;
-  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
-}
-
-.carousel-control-prev {
-  left: -50px;
-}
-
-.carousel-control-next {
-  right: -50px;
-}
-
-.carousel-indicators {
-  position: absolute;
-  bottom: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0;
-  margin: 0;
-}
-
-.carousel-indicators button {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: #bbb;
-  border: none;
-  margin: 0 5px;
-  transition: background-color 0.3s;
-}
-
-.carousel-indicators .active {
-  background-color: #eb5216;
-}
-
-.carousel-indicators button:hover {
-  background-color: #d35320;
 }
 </style>
