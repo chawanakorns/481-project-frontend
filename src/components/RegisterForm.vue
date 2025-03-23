@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const username = ref('');
-const password = ref('');
-const msg = 'Register for an Account';
-const errorMsg = ref('');
+const username = ref('')
+const password = ref('')
+const msg = 'Register for an Account'
+const errorMsg = ref('')
 
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
 const handleSubmit = async () => {
   try {
-    const response = await authStore.register(username.value, password.value);
-    alert(response.message);
-    router.push('/login');
+    const response = await authStore.register(username.value, password.value)
+    alert(response.message)
+    router.push('/login')
   } catch (error) {
-    errorMsg.value = (error as Error).message;
+    errorMsg.value = (error as Error).message
   }
-};
+}
 </script>
 
 <template>
@@ -60,7 +60,7 @@ const handleSubmit = async () => {
                 <!-- Login Link -->
                 <div class="text-center">
                   <span>Already have an account? </span>
-                  <router-link to="/login" class="text-primary text-decoration-none fw-bold">
+                  <router-link to="/login" class="text-success text-decoration-none fw-bold">
                     Login
                   </router-link>
                 </div>
@@ -80,6 +80,11 @@ const handleSubmit = async () => {
 
 .card {
   border-radius: 10px;
+}
+
+.btn {
+  background-color: #eb5216;
+  color: #fff;
 }
 
 .btn-success:hover {

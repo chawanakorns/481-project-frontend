@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const username = ref('');
-const password = ref('');
-const msg = 'Login to Your Account';
-const errorMsg = ref('');
+const username = ref('')
+const password = ref('')
+const msg = 'Login to Your Account'
+const errorMsg = ref('')
 
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
 const handleSubmit = async () => {
   try {
-    const response = await authStore.login(username.value, password.value);
-    alert(response.message);
-    router.push('/home');
+    const response = await authStore.login(username.value, password.value)
+    alert(response.message)
+    router.push('/home')
   } catch (error) {
-    errorMsg.value = (error as Error).message;
+    errorMsg.value = (error as Error).message
   }
-};
+}
 </script>
 
 <template>
@@ -54,13 +54,13 @@ const handleSubmit = async () => {
 
                 <!-- Submit Button -->
                 <div class="d-grid mb-3">
-                  <button type="submit" class="btn btn-success">Login</button>
+                  <button type="submit" class="btn">Login</button>
                 </div>
 
                 <!-- Register Link -->
                 <div class="text-center">
                   <span>Don't have an account? </span>
-                  <router-link to="/register" class="text-primary text-decoration-none fw-bold">
+                  <router-link to="/register" class="text-success text-decoration-none fw-bold">
                     Register
                   </router-link>
                 </div>
@@ -82,7 +82,12 @@ const handleSubmit = async () => {
   border-radius: 10px;
 }
 
+.btn {
+  background-color: #eb5216;
+  color: #fff;
+}
+
 .btn-success:hover {
-  background-color: #218838;
+  background-color: #eb5216;
 }
 </style>

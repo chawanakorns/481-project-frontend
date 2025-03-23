@@ -6,8 +6,8 @@ import { Icon } from '@iconify/vue'
   <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
     <div class="container-fluid px-4">
       <!-- Brand/logo area -->
-      <a class="navbar-brand fw-bold text-primary" href="/home">
-        <Icon icon="mdi:rocket-launch-outline" width="32px" height="32px" class="me-1" /> MyApp
+      <a class="navbar-brand fw-bold" href="/home">
+        <Icon icon="mdi:food-fork-drink" width="32px" height="32px" class="me-1" /> DishCover
       </a>
 
       <!-- Toggle button for mobile -->
@@ -48,11 +48,14 @@ import { Icon } from '@iconify/vue'
 
 .navbar-brand {
   font-size: 1.5rem;
+  color: #eb5216;
+  /* Set the color to #eb5216 */
   transition: color 0.2s ease;
 }
 
 .navbar-brand:hover {
-  color: #0d6efd !important;
+  color: #a7431c !important;
+  /* Keep the hover color as is */
 }
 
 .nav-link {
@@ -64,8 +67,7 @@ import { Icon } from '@iconify/vue'
 }
 
 .nav-link:hover {
-  background-color: rgba(13, 110, 253, 0.1);
-  color: #0d6efd;
+  color: #a7431c;
 }
 
 .nav-link .iconify,
@@ -74,7 +76,9 @@ import { Icon } from '@iconify/vue'
 }
 
 .btn {
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .btn:hover {
@@ -82,13 +86,13 @@ import { Icon } from '@iconify/vue'
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, #0d6efd, #0a58ca);
+  background: linear-gradient(45deg, #eb5216, #a7431c);
   border: none;
   margin-left: 16px;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(45deg, #0a58ca, #084298);
+  background: linear-gradient(45deg, #eb5216, #a7431c);
 }
 
 .btn-outline-primary {

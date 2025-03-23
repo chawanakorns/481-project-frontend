@@ -2,51 +2,51 @@
 <!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <!-- DetailView.vue -->
 <script setup lang="ts">
-import { defineProps, ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth'; // Import auth store
-import api from '@/stores/api'; // Use the API client
-import { Icon } from '@iconify/vue';
-import placeholderImage from '@/assets/placeholder.jpg';
+import { defineProps, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import api from '@/stores/api'
+import { Icon } from '@iconify/vue'
+import placeholderImage from '@/assets/placeholder.jpg'
 
-const PLACEHOLDER_IMAGE = placeholderImage;
+const PLACEHOLDER_IMAGE = placeholderImage
 
 const props = defineProps<{
-  id: string;
-  recipe?: any;
-}>();
+  id: string
+  recipe?: any
+}>()
 
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
-const localRecipe = ref<any>(props.recipe);
-const imageLoadError = ref<{ [key: string]: boolean }>({});
-const folders = ref<any[]>([]);
-const selectedFolderId = ref<number | null>(null);
-const rating = ref<number>(1);
-const userId = ref(localStorage.getItem('user_id') || ''); // Get userId from localStorage
-const feedbackMessage = ref<string>('');
-const showBookmarkSection = ref(false);
+const localRecipe = ref<any>(props.recipe)
+const imageLoadError = ref<{ [key: string]: boolean }>({})
+const folders = ref<any[]>([])
+const selectedFolderId = ref<number | null>(null)
+const rating = ref<number>(1)
+const userId = ref(localStorage.getItem('user_id') || '')
+const feedbackMessage = ref<string>('')
+const showBookmarkSection = ref(false)
 
 const formatTime = (minutes: number | null | undefined): string => {
-  if (!minutes || typeof minutes !== 'number' || minutes <= 0) return 'Not specified';
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  let result = '';
-  if (hours > 0) result += `${hours} hour${hours > 1 ? 's' : ''}`;
+  if (!minutes || typeof minutes !== 'number' || minutes <= 0) return 'Not specified'
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  let result = ''
+  if (hours > 0) result += `${hours} hour${hours > 1 ? 's' : ''}`
   if (remainingMinutes > 0)
-    result += `${hours > 0 ? ' ' : ''}${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
-  return result.trim();
-};
+    result += `${hours > 0 ? ' ' : ''}${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`
+  return result.trim()
+}
 
 const formatQuantity = (quantity: string): string => {
-  if (!quantity || quantity === 'NA') return '—';
+  if (!quantity || quantity === 'NA') return '—'
 
-  const parts = quantity.trim().split(' ');
-  if (parts.length === 1) return quantity;
+  const parts = quantity.trim().split(' ')
+  if (parts.length === 1) return quantity
 
-  const whole = parts[0];
-  const fraction = parts[1];
+  const whole = parts[0]
+  const fraction = parts[1]
 
   const fractionMap: { [key: string]: string } = {
     '1/2': '½',
@@ -58,50 +58,50 @@ const formatQuantity = (quantity: string): string => {
     '3/8': '⅜',
     '5/8': '⅝',
     '7/8': '⅞',
-  };
-
-  if (fractionMap[fraction]) {
-    return whole ? `${whole} ${fractionMap[fraction]}` : fractionMap[fraction];
   }
 
-  return quantity;
-};
+  if (fractionMap[fraction]) {
+    return whole ? `${whole} ${fractionMap[fraction]}` : fractionMap[fraction]
+  }
+
+  return quantity
+}
 
 const fetchRecipe = async () => {
   if (!localRecipe.value) {
     try {
-      const response = await api.getRecipe(props.id);
-      localRecipe.value = response;
-      feedbackMessage.value = '';
+      const response = await api.getRecipe(props.id)
+      localRecipe.value = response
+      feedbackMessage.value = ''
     } catch (error) {
-      feedbackMessage.value = 'Failed to fetch recipe details.';
+      feedbackMessage.value = 'Failed to fetch recipe details.'
       if ((error as any).response && (error as any).response.status === 401) {
-        authStore.logout();
-        router.push('/login');
+        authStore.logout()
+        router.push('/login')
       }
     }
   }
-};
+}
 
 const fetchFolders = async () => {
   try {
-    const response = await api.getFolders({ params: { user_id: userId.value } });
-    folders.value = response;
-    if (folders.value.length > 0) selectedFolderId.value = folders.value[0].FolderId;
-    else feedbackMessage.value = 'No folders found. Create one in the Bookmarks page.';
+    const response = await api.getFolders({ params: { user_id: userId.value } })
+    folders.value = response
+    if (folders.value.length > 0) selectedFolderId.value = folders.value[0].FolderId
+    else feedbackMessage.value = 'No folders found. Create one in the Bookmarks page.'
   } catch (error) {
-    feedbackMessage.value = 'Failed to fetch folders.';
+    feedbackMessage.value = 'Failed to fetch folders.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const bookmarkRecipe = async () => {
   if (!selectedFolderId.value || !rating.value || rating.value < 1 || rating.value > 5) {
-    feedbackMessage.value = 'Please select a folder and provide a rating (1-5).';
-    return;
+    feedbackMessage.value = 'Please select a folder and provide a rating (1-5).'
+    return
   }
   try {
     await api.createBookmark({
@@ -109,40 +109,41 @@ const bookmarkRecipe = async () => {
       folder_id: selectedFolderId.value,
       recipe_id: localRecipe.value.RecipeId,
       rating: rating.value,
-    });
-    feedbackMessage.value = 'Recipe bookmarked successfully!';
-    showBookmarkSection.value = false;
+    })
+    feedbackMessage.value = 'Recipe bookmarked successfully!'
+    showBookmarkSection.value = false
   } catch (error) {
-    feedbackMessage.value = 'Failed to bookmark recipe.';
+    feedbackMessage.value = 'Failed to bookmark recipe.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const getImageUrl = (recipe: any) => {
-  return recipe.image_url && recipe.image_url !== 'character(0)' ? recipe.image_url : PLACEHOLDER_IMAGE;
-};
+  return recipe.image_url && recipe.image_url !== 'character(0)'
+    ? recipe.image_url
+    : PLACEHOLDER_IMAGE
+}
 
 const handleImageError = (recipeId: number) => {
-  imageLoadError.value[recipeId] = true;
-  if (localRecipe.value) localRecipe.value.image_url = PLACEHOLDER_IMAGE;
-};
+  imageLoadError.value[recipeId] = true
+  if (localRecipe.value) localRecipe.value.image_url = PLACEHOLDER_IMAGE
+}
 
 const toggleBookmarkSection = () => {
-  showBookmarkSection.value = !showBookmarkSection.value;
-};
+  showBookmarkSection.value = !showBookmarkSection.value
+}
 
 onMounted(() => {
-  // Check if the user is authenticated
   if (!authStore.isAuthenticated()) {
-    router.push('/login');
-    return;
+    router.push('/login')
+    return
   }
-  fetchRecipe();
-  fetchFolders();
-});
+  fetchRecipe()
+  fetchFolders()
+})
 </script>
 
 <template>
@@ -164,8 +165,10 @@ onMounted(() => {
         <div class="recipe-image col-lg-5 col-md-12 text-center">
           <img :src="getImageUrl(localRecipe)" class="main-image img-fluid rounded shadow-sm"
             @error="handleImageError(localRecipe.RecipeId)" />
-          <button v-if="!showBookmarkSection" @click="toggleBookmarkSection" class="btn btn-primary w-100 mt-3">
-            Bookmark
+          <button v-if="!showBookmarkSection" @click="toggleBookmarkSection"
+            class="btn btn-success w-100 mt-3 d-flex align-items-center justify-content-center gap-2">
+            <Icon icon="mdi:bookmark" style="font-size: 1.2rem" />
+            <span>Bookmark</span>
           </button>
           <div class="bookmark-section card shadow-sm mt-3 p-3 text-start" v-if="showBookmarkSection">
             <h2 class="h5 fw-bold">Bookmark</h2>
@@ -184,7 +187,9 @@ onMounted(() => {
             </div>
             <div class="d-flex gap-2 mt-3">
               <button @click="bookmarkRecipe" class="btn btn-success flex-fill">Bookmark</button>
-              <button @click="toggleBookmarkSection" class="btn btn-danger flex-fill">Cancel</button>
+              <button @click="toggleBookmarkSection" class="btn btn-danger flex-fill">
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -200,7 +205,9 @@ onMounted(() => {
               <h2 class="h4 pb-3 fw-bold text-decoration-underline">Time</h2>
               <p v-if="localRecipe.PrepTime"><b>Prep:</b> {{ formatTime(localRecipe.PrepTime) }}</p>
               <p v-if="localRecipe.CookTime"><b>Cook:</b> {{ formatTime(localRecipe.CookTime) }}</p>
-              <p v-if="localRecipe.TotalTime"><b>Total:</b> {{ formatTime(localRecipe.TotalTime) }}</p>
+              <p v-if="localRecipe.TotalTime">
+                <b>Total:</b> {{ formatTime(localRecipe.TotalTime) }}
+              </p>
             </div>
 
             <div class="info-card card shadow-sm p-4 w-100% flex-fill" v-if="

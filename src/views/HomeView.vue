@@ -170,7 +170,7 @@ onMounted(async () => {
     </div>
 
     <div class="text-start mb-4">
-      <h1 class="display-5 fw-bold">You may like these</h1>
+      <h1 class="text-center fw-bold">You may like these</h1>
     </div>
 
     <div class="recommendation-container mb-5 px-2 py-3">
@@ -220,7 +220,7 @@ onMounted(async () => {
         </div>
         <button v-if="groupedRecommendations.length > 1" class="carousel-control-prev" type="button"
           data-bs-target="#recommendationCarousel" data-bs-slide="prev">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="carousel-control-prev-icon " aria-hidden="true"></span>
           <span class="visually-hidden">Previous</span>
         </button>
         <button v-if="groupedRecommendations.length > 1" class="carousel-control-next" type="button"
@@ -231,46 +231,48 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="text-start my-4">
-      <h1 class="display-5 fw-bold">Explore</h1>
-    </div>
-
-    <div class="search-body d-flex justify-content-center mb-4">
-      <div class="input-group w-50">
-        <input class="form-control" type="text" placeholder="Search..." v-model="searchTerm"
-          @keyup.enter="filterRecipes" />
-        <button class="btn btn-primary" @click="filterRecipes">Search</button>
+    <div style="margin-top: 5rem;">
+      <div class="text-start my-4">
+        <h1 class="text-center fw-bold">Explore</h1>
       </div>
-    </div>
 
-    <div v-if="correctedQuery && correctedQuery !== originalQuery" class="text-center mb-4">
-      Did you mean:
-      <a href="#" @click.prevent="useSuggestion(correctedQuery)" class="fw-bold">{{ correctedQuery }}</a>?
-    </div>
+      <div class="search-body d-flex justify-content-center mb-4">
+        <div class="input-group w-50">
+          <input class="form-control" type="text" placeholder="Search..." v-model="searchTerm"
+            @keyup.enter="filterRecipes" />
+          <button class="btn btn-success" @click="filterRecipes">Search</button>
+        </div>
+      </div>
 
-    <div class="item row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 px-2 py-3">
-      <div v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="col">
-        <div class="item-card card shadow-sm h-100" @click="openModal(recipe)">
-          <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
-          <div class="card-body">
-            <h5 class="card-title fw-bold">
-              {{
-                recipe.Name
-                  ? recipe.Name.length > 20
-                    ? recipe.Name.substring(0, 25) + '...'
-                    : recipe.Name
-                  : ''
-              }}
-            </h5>
-            <p class="card-text text-muted">
-              {{
-                recipe.Description
-                  ? recipe.Description.length > 20
-                    ? recipe.Description.substring(0, 28) + '...'
-                    : recipe.Description
-                  : 'No description'
-              }}
-            </p>
+      <div v-if="correctedQuery && correctedQuery !== originalQuery" class="text-center mb-4">
+        Did you mean:
+        <a href="#" @click.prevent="useSuggestion(correctedQuery)" class="fw-bold">{{ correctedQuery }}</a>?
+      </div>
+
+      <div class="item row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 px-2 py-3">
+        <div v-for="recipe in filteredRecipes" :key="recipe.RecipeId" class="col">
+          <div class="item-card card shadow-sm h-100" @click="openModal(recipe)">
+            <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
+            <div class="card-body">
+              <h5 class="card-title fw-bold">
+                {{
+                  recipe.Name
+                    ? recipe.Name.length > 20
+                      ? recipe.Name.substring(0, 25) + '...'
+                      : recipe.Name
+                    : ''
+                }}
+              </h5>
+              <p class="card-text text-muted">
+                {{
+                  recipe.Description
+                    ? recipe.Description.length > 20
+                      ? recipe.Description.substring(0, 28) + '...'
+                      : recipe.Description
+                    : 'No description'
+                }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -350,10 +352,12 @@ onMounted(async () => {
 
 .btn-primary {
   transition: background-color 0.3s;
+  background-color: #eb5216;
+  border: none;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: #d35320;
 }
 
 .btn-primary:disabled {
@@ -379,7 +383,7 @@ onMounted(async () => {
   height: 40px;
   top: 50%;
   transform: translateY(-50%);
-  background-color: #007bff;
+  background-color: #eb5216;
   border-radius: 50%;
   opacity: 0.8;
   transition: opacity 0.3s, background-color 0.3s;
@@ -388,7 +392,7 @@ onMounted(async () => {
 .carousel-control-prev:hover,
 .carousel-control-next:hover {
   opacity: 1;
-  background-color: #0056b3;
+  background-color: #d35320;
 }
 
 .carousel-control-prev-icon,
@@ -427,10 +431,10 @@ onMounted(async () => {
 }
 
 .carousel-indicators .active {
-  background-color: #007bff;
+  background-color: #eb5216;
 }
 
 .carousel-indicators button:hover {
-  background-color: #0056b3;
+  background-color: #d35320;
 }
 </style>

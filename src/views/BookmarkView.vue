@@ -1,54 +1,54 @@
 <!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
-import { ref, onMounted, onActivated } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import api from '@/stores/api';
-import NavigationBar from '@/components/NavigationBar.vue';
-import { Icon } from '@iconify/vue';
-import DetailView from '@/views/DetailView.vue';
-import placeholderImage from '@/assets/placeholder.jpg';
+import { ref, onMounted, onActivated } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import api from '@/stores/api'
+import NavigationBar from '@/components/NavigationBar.vue'
+import { Icon } from '@iconify/vue'
+import DetailView from '@/views/DetailView.vue'
+import placeholderImage from '@/assets/placeholder.jpg'
 
-const PLACEHOLDER_IMAGE = placeholderImage;
+const PLACEHOLDER_IMAGE = placeholderImage
 
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
-const userId = ref(localStorage.getItem('user_id') || '');
-const folders = ref<any[]>([]);
-const newFolderName = ref('');
-const editingFolderId = ref<number | null>(null);
-const editedFolderName = ref('');
-const bookmarks = ref<{ [key: number]: any[] }>({});
-const errorMessage = ref<string>('');
-const editingRating = ref<{ [key: number]: boolean }>({});
-const editingFolder = ref<{ [key: number]: boolean }>({});
-const imageLoadError = ref<{ [key: string]: boolean }>({});
-const suggestions = ref<any[]>([]);
-const showSuggestionsModal = ref(false);
-const selectedRecipe = ref<any | null>(null);
-const showRecipeModal = ref(false);
-const loading = ref(true); // Add loading state
+const userId = ref(localStorage.getItem('user_id') || '')
+const folders = ref<any[]>([])
+const newFolderName = ref('')
+const editingFolderId = ref<number | null>(null)
+const editedFolderName = ref('')
+const bookmarks = ref<{ [key: number]: any[] }>({})
+const errorMessage = ref<string>('')
+const editingRating = ref<{ [key: number]: boolean }>({})
+const editingFolder = ref<{ [key: number]: boolean }>({})
+const imageLoadError = ref<{ [key: string]: boolean }>({})
+const suggestions = ref<any[]>([])
+const showSuggestionsModal = ref(false)
+const selectedRecipe = ref<any | null>(null)
+const showRecipeModal = ref(false)
+const loading = ref(true) // Add loading state
 
 const fetchFoldersAndBookmarks = async () => {
   try {
-    loading.value = true; // Set loading to true before fetching
-    const response = await api.getAllBookmarks({ params: { user_id: userId.value } });
-    folders.value = response.folders;
-    bookmarks.value = response.bookmarks;
-    errorMessage.value = '';
+    loading.value = true // Set loading to true before fetching
+    const response = await api.getAllBookmarks({ params: { user_id: userId.value } })
+    folders.value = response.folders
+    bookmarks.value = response.bookmarks
+    errorMessage.value = ''
   } catch (error) {
-    console.error('Error fetching folders and bookmarks:', error);
-    errorMessage.value = 'Failed to fetch folders or bookmarks.';
+    console.error('Error fetching folders and bookmarks:', error)
+    errorMessage.value = 'Failed to fetch folders or bookmarks.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   } finally {
-    loading.value = false; // Set loading to false after fetching (success or failure)
+    loading.value = false // Set loading to false after fetching (success or failure)
   }
-};
+}
 
 const fetchSuggestions = async (folderId: number) => {
   try {
@@ -58,236 +58,238 @@ const fetchSuggestions = async (folderId: number) => {
         folder_id: folderId,
         limit: 10,
       },
-    });
-    suggestions.value = response.recommendations;
-    errorMessage.value = response.message || '';
+    })
+    suggestions.value = response.recommendations
+    errorMessage.value = response.message || ''
     if (suggestions.value.length > 0) {
-      showSuggestionsModal.value = true;
+      showSuggestionsModal.value = true
     } else {
-      errorMessage.value = response.message || 'No suggestions available.';
+      errorMessage.value = response.message || 'No suggestions available.'
     }
   } catch (error) {
-    console.error('Error fetching suggestions:', error);
-    errorMessage.value = (error as any).response?.data?.message || 'Failed to fetch suggestions.';
+    console.error('Error fetching suggestions:', error)
+    errorMessage.value = (error as any).response?.data?.message || 'Failed to fetch suggestions.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const toggleEditingFolder = (folderId: number) => {
-  editingFolder.value[folderId] = !editingFolder.value[folderId];
+  editingFolder.value[folderId] = !editingFolder.value[folderId]
   if (!editingFolder.value[folderId]) {
     if (editingFolderId.value === folderId) {
-      editingFolderId.value = null;
-      editedFolderName.value = '';
+      editingFolderId.value = null
+      editedFolderName.value = ''
     }
     bookmarks.value[folderId]?.forEach((bookmark) => {
-      editingRating.value[bookmark.BookmarkId] = false;
-    });
+      editingRating.value[bookmark.BookmarkId] = false
+    })
   }
-};
+}
 
 const createFolder = async () => {
   if (!newFolderName.value.trim()) {
-    errorMessage.value = 'Folder name cannot be empty.';
-    return;
+    errorMessage.value = 'Folder name cannot be empty.'
+    return
   }
   try {
     const response = await api.createFolder({
       user_id: userId.value,
       name: newFolderName.value.trim(),
-    });
+    })
     folders.value.push({
       FolderId: response.folder_id,
       UserId: userId.value,
       Name: newFolderName.value.trim(),
       AvgRating: null,
-    });
-    newFolderName.value = '';
-    await fetchFoldersAndBookmarks();
-    errorMessage.value = '';
+    })
+    newFolderName.value = ''
+    await fetchFoldersAndBookmarks()
+    errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to create folder.';
+    errorMessage.value = 'Failed to create folder.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const startEditing = (folder: any) => {
-  editingFolderId.value = folder.FolderId;
-  editedFolderName.value = folder.Name;
-};
+  editingFolderId.value = folder.FolderId
+  editedFolderName.value = folder.Name
+}
 
 const saveEdit = async (folderId: number) => {
   if (!editedFolderName.value.trim()) {
-    errorMessage.value = 'Folder name cannot be empty.';
-    return;
+    errorMessage.value = 'Folder name cannot be empty.'
+    return
   }
   try {
-    await api.updateFolder(folderId, { name: editedFolderName.value.trim() });
-    const folder = folders.value.find((f) => f.FolderId === folderId);
-    if (folder) folder.Name = editedFolderName.value.trim();
-    editingFolderId.value = null;
-    errorMessage.value = '';
+    await api.updateFolder(folderId, { name: editedFolderName.value.trim() })
+    const folder = folders.value.find((f) => f.FolderId === folderId)
+    if (folder) folder.Name = editedFolderName.value.trim()
+    editingFolderId.value = null
+    errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to update folder.';
+    errorMessage.value = 'Failed to update folder.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const cancelEdit = () => {
-  editingFolderId.value = null;
-  editedFolderName.value = '';
-};
+  editingFolderId.value = null
+  editedFolderName.value = ''
+}
 
 const deleteFolder = async (folderId: number) => {
   try {
-    await api.deleteFolder(folderId);
-    folders.value = folders.value.filter((f) => f.FolderId !== folderId);
-    delete bookmarks.value[folderId];
-    delete editingFolder.value[folderId];
-    errorMessage.value = '';
+    await api.deleteFolder(folderId)
+    folders.value = folders.value.filter((f) => f.FolderId !== folderId)
+    delete bookmarks.value[folderId]
+    delete editingFolder.value[folderId]
+    errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to delete folder and its bookmarks.';
+    errorMessage.value = 'Failed to delete folder and its bookmarks.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const deleteBookmark = async (folderId: number, bookmarkId: number) => {
   try {
-    await api.deleteBookmark(bookmarkId);
-    bookmarks.value[folderId] = bookmarks.value[folderId].filter((b) => b.BookmarkId !== bookmarkId);
-    await fetchFoldersAndBookmarks();
-    errorMessage.value = '';
+    await api.deleteBookmark(bookmarkId)
+    bookmarks.value[folderId] = bookmarks.value[folderId].filter((b) => b.BookmarkId !== bookmarkId)
+    await fetchFoldersAndBookmarks()
+    errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to delete bookmark.';
+    errorMessage.value = 'Failed to delete bookmark.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const startEditingRating = (bookmarkId: number) => {
-  editingRating.value[bookmarkId] = true;
-};
+  editingRating.value[bookmarkId] = true
+}
 
 const saveRating = async (folderId: number, bookmarkId: number, newRating: number) => {
   if (newRating < 1 || newRating > 5) {
-    errorMessage.value = 'Rating must be between 1 and 5.';
-    return;
+    errorMessage.value = 'Rating must be between 1 and 5.'
+    return
   }
   try {
-    await api.updateBookmarkRating(bookmarkId, { rating: newRating });
-    const bookmark = bookmarks.value[folderId].find((b) => b.BookmarkId === bookmarkId);
-    if (bookmark) bookmark.Rating = newRating;
-    editingRating.value[bookmarkId] = false;
-    await fetchFoldersAndBookmarks();
-    errorMessage.value = '';
+    await api.updateBookmarkRating(bookmarkId, { rating: newRating })
+    const bookmark = bookmarks.value[folderId].find((b) => b.BookmarkId === bookmarkId)
+    if (bookmark) bookmark.Rating = newRating
+    editingRating.value[bookmarkId] = false
+    await fetchFoldersAndBookmarks()
+    errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to update rating.';
+    errorMessage.value = 'Failed to update rating.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const cancelEditingRating = (bookmarkId: number) => {
-  editingRating.value[bookmarkId] = false;
-};
+  editingRating.value[bookmarkId] = false
+}
 
 const onDragStart = (event: DragEvent, bookmarkId: number, fromFolderId: number) => {
-  event.dataTransfer?.setData('bookmarkId', bookmarkId.toString());
-  event.dataTransfer?.setData('fromFolderId', fromFolderId.toString());
-};
+  event.dataTransfer?.setData('bookmarkId', bookmarkId.toString())
+  event.dataTransfer?.setData('fromFolderId', fromFolderId.toString())
+}
 
 const onDrop = async (event: DragEvent, toFolderId: number) => {
-  event.preventDefault();
-  const bookmarkId = parseInt(event.dataTransfer?.getData('bookmarkId') || '0');
-  const fromFolderId = parseInt(event.dataTransfer?.getData('fromFolderId') || '0');
-  if (fromFolderId === toFolderId) return;
+  event.preventDefault()
+  const bookmarkId = parseInt(event.dataTransfer?.getData('bookmarkId') || '0')
+  const fromFolderId = parseInt(event.dataTransfer?.getData('fromFolderId') || '0')
+  if (fromFolderId === toFolderId) return
   try {
-    await api.updateBookmark(bookmarkId, { folder_id: toFolderId });
-    const bookmark = bookmarks.value[fromFolderId].find((b) => b.BookmarkId === bookmarkId);
-    bookmarks.value[fromFolderId] = bookmarks.value[fromFolderId].filter((b) => b.BookmarkId !== bookmarkId);
-    if (!bookmarks.value[toFolderId]) bookmarks.value[toFolderId] = [];
-    bookmarks.value[toFolderId].push({ ...bookmark, FolderId: toFolderId });
-    await fetchFoldersAndBookmarks();
-    errorMessage.value = '';
+    await api.updateBookmark(bookmarkId, { folder_id: toFolderId })
+    const bookmark = bookmarks.value[fromFolderId].find((b) => b.BookmarkId === bookmarkId)
+    bookmarks.value[fromFolderId] = bookmarks.value[fromFolderId].filter(
+      (b) => b.BookmarkId !== bookmarkId,
+    )
+    if (!bookmarks.value[toFolderId]) bookmarks.value[toFolderId] = []
+    bookmarks.value[toFolderId].push({ ...bookmark, FolderId: toFolderId })
+    await fetchFoldersAndBookmarks()
+    errorMessage.value = ''
   } catch (error) {
-    errorMessage.value = 'Failed to move bookmark.';
+    errorMessage.value = 'Failed to move bookmark.'
     if ((error as any).response && (error as any).response.status === 401) {
-      authStore.logout();
-      router.push('/login');
+      authStore.logout()
+      router.push('/login')
     }
   }
-};
+}
 
 const onDragOver = (event: DragEvent) => {
-  event.preventDefault();
-};
+  event.preventDefault()
+}
 
 const openRecipeModal = (recipe: any) => {
-  selectedRecipe.value = recipe;
-  showRecipeModal.value = true;
-};
+  selectedRecipe.value = recipe
+  showRecipeModal.value = true
+}
 
 const closeRecipeModal = () => {
-  showRecipeModal.value = false;
-  selectedRecipe.value = null;
-};
+  showRecipeModal.value = false
+  selectedRecipe.value = null
+}
 
 const closeSuggestionsModal = () => {
-  showSuggestionsModal.value = false;
-  suggestions.value = [];
-};
+  showSuggestionsModal.value = false
+  suggestions.value = []
+}
 
 const getImageUrl = (item: any) => {
-  return item.image_url && item.image_url !== 'character(0)' ? item.image_url : PLACEHOLDER_IMAGE;
-};
+  return item.image_url && item.image_url !== 'character(0)' ? item.image_url : PLACEHOLDER_IMAGE
+}
 
 const handleImageError = (id: number) => {
-  imageLoadError.value[id] = true;
+  imageLoadError.value[id] = true
   const folderId =
     Object.keys(bookmarks.value).find((key: any) =>
-      bookmarks.value[key].some((b: any) => b.BookmarkId === id)
-    ) || suggestions.value.find((r) => r.RecipeId === id)?.RecipeId;
+      bookmarks.value[key].some((b: any) => b.BookmarkId === id),
+    ) || suggestions.value.find((r) => r.RecipeId === id)?.RecipeId
   if (folderId) {
-    const bookmark = bookmarks.value[parseInt(folderId)]?.find((b) => b.BookmarkId === id);
-    if (bookmark) bookmark.image_url = PLACEHOLDER_IMAGE;
+    const bookmark = bookmarks.value[parseInt(folderId)]?.find((b) => b.BookmarkId === id)
+    if (bookmark) bookmark.image_url = PLACEHOLDER_IMAGE
   } else {
-    const suggestion = suggestions.value.find((r) => r.RecipeId === id);
-    if (suggestion) suggestion.image_url = PLACEHOLDER_IMAGE;
+    const suggestion = suggestions.value.find((r) => r.RecipeId === id)
+    if (suggestion) suggestion.image_url = PLACEHOLDER_IMAGE
   }
-};
+}
 
 onMounted(() => {
   if (!authStore.isAuthenticated()) {
-    router.push('/login');
-    return;
+    router.push('/login')
+    return
   }
-  fetchFoldersAndBookmarks();
-});
+  fetchFoldersAndBookmarks()
+})
 
-onActivated(fetchFoldersAndBookmarks);
+onActivated(fetchFoldersAndBookmarks)
 </script>
 
 <template>
   <NavigationBar />
   <div class="container mt-5 mb-5 pt-5 pb-5">
     <h1 class="page-title display-4 fw-bold text-center mb-4">Bookmarks</h1>
-    <p v-if="errorMessage" class="alert alert-danger text-center">{{ errorMessage }}</p>
+    <p v-if="errorMessage" class="alert alert-success text-center">{{ errorMessage }}</p>
 
     <div class="create-folder d-flex justify-content-center gap-3 mb-4">
       <input v-model="newFolderName" type="text" placeholder="New folder name" class="form-control w-25"
@@ -336,22 +338,21 @@ onActivated(fetchFoldersAndBookmarks);
                 <div class="folder-actions d-flex gap-2">
                   <button v-if="editingFolder[folder.FolderId]" @click="deleteFolder(folder.FolderId)"
                     class="btn btn-danger">
-                    <Icon icon="mdi:trash-can-outline" style="font-size: 1.2rem;" />
+                    <Icon icon="mdi:trash-can-outline" style="font-size: 1.2rem" />
                   </button>
                   <button v-if="editingFolder[folder.FolderId]" @click="startEditing(folder)"
                     class="btn btn-info d-flex align-items-center gap-1">
-                    <Icon icon="mdi:pencil-outline" style="font-size: 1.2rem;" />
+                    <Icon icon="mdi:pencil-outline" style="font-size: 1.2rem" />
                     <span class="fs-6">Edit Name</span>
                   </button>
                   <button v-if="!editingFolder[folder.FolderId]" @click="fetchSuggestions(folder.FolderId)"
                     class="btn btn-secondary d-flex align-items-center gap-1">
-                    <Icon icon="mdi:lightbulb-outline" style="font-size: 1.2rem;" />
+                    <Icon icon="mdi:lightbulb-outline" style="font-size: 1.2rem" />
                     <span class="fs-6">Suggestions</span>
                   </button>
                   <button @click="toggleEditingFolder(folder.FolderId)"
                     class="btn btn-primary d-flex align-items-center gap-1">
-                    <Icon :icon="editingFolder[folder.FolderId] ? 'mdi:check' : 'mdi:edit'"
-                      style="font-size: 1.2rem;" />
+                    <Icon :icon="editingFolder[folder.FolderId] ? 'mdi:check' : 'mdi:edit'" style="font-size: 1.2rem" />
                     <span class="fs-6">{{ editingFolder[folder.FolderId] ? 'Done' : 'Edit' }}</span>
                   </button>
                 </div>
@@ -369,19 +370,26 @@ onActivated(fetchFoldersAndBookmarks);
                         @error="handleImageError(bookmark.BookmarkId)" />
                       <div class="bookmark-info flex-grow-1">
                         <p class="bookmark-name card-text fw-medium mb-1">{{ bookmark.Name }}</p>
-                        <div v-if="editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]"
-                          class="rating-edit d-flex gap-2 align-items-center">
+                        <div v-if="
+                          editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId]
+                        " class="rating-edit d-flex gap-2 align-items-center">
                           <div :class="[
                             'star-rating',
-                            { 'editable': editingRating[bookmark.BookmarkId] && editingFolder[folder.FolderId] },
+                            {
+                              editable:
+                                editingRating[bookmark.BookmarkId] &&
+                                editingFolder[folder.FolderId],
+                            },
                           ]">
                             <Icon v-for="star in 5" :key="star"
-                              :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'"
-                              :class="[star <= bookmark.Rating ? 'text-warning' : 'text-muted', 'me-1']"
-                              @click="bookmark.Rating = star" style="cursor: pointer; font-size: 1.2rem;" />
+                              :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
+                                star <= bookmark.Rating ? 'text-warning' : 'text-muted',
+                                'me-1',
+                              ]" @click="bookmark.Rating = star" style="cursor: pointer; font-size: 1.2rem" />
                           </div>
-                          <button @click="saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)"
-                            class="btn btn-success btn-sm">
+                          <button @click="
+                            saveRating(folder.FolderId, bookmark.BookmarkId, bookmark.Rating)
+                            " class="btn btn-success btn-sm">
                             Save
                           </button>
                           <button @click="cancelEditingRating(bookmark.BookmarkId)" class="btn btn-secondary btn-sm">
@@ -389,11 +397,12 @@ onActivated(fetchFoldersAndBookmarks);
                           </button>
                         </div>
                         <p v-else class="bookmark-rating card-text text-muted mb-0 d-flex align-items-center">
-                          <span :class="['star-rating', { 'editable': false }]" class="me-2">
+                          <span :class="['star-rating', { editable: false }]" class="me-2">
                             <Icon v-for="star in 5" :key="star"
-                              :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'"
-                              :class="[star <= bookmark.Rating ? 'text-warning' : 'text-muted', 'me-1']"
-                              style="font-size: 1rem;" />
+                              :icon="star <= bookmark.Rating ? 'mdi:star' : 'mdi:star-outline'" :class="[
+                                star <= bookmark.Rating ? 'text-warning' : 'text-muted',
+                                'me-1',
+                              ]" style="font-size: 1rem" />
                           </span>
                           ({{ bookmark.Rating }}/5)
                           <button v-if="editingFolder[folder.FolderId]" @click="startEditingRating(bookmark.BookmarkId)"
@@ -405,7 +414,7 @@ onActivated(fetchFoldersAndBookmarks);
                       <button v-if="editingFolder[folder.FolderId]"
                         @click="deleteBookmark(folder.FolderId, bookmark.BookmarkId)"
                         class="btn btn-danger btn-sm ms-2">
-                        <Icon icon="mdi:trash-can-outline" style="font-size: 1.2rem;" />
+                        <Icon icon="mdi:trash-can-outline" style="font-size: 1.2rem" />
                       </button>
                     </div>
                   </div>
@@ -422,11 +431,11 @@ onActivated(fetchFoldersAndBookmarks);
   <!-- Suggestions Modal -->
   <Teleport to="body" v-if="showSuggestionsModal">
     <div class="modal fade show" id="suggestionsModal" tabindex="-1" aria-labelledby="suggestionsModalLabel"
-      style="display: block; z-index: 1050;">
-      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style="z-index: 1051;">
-        <div class="modal-content">
+      style="display: block; z-index: 1050">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style="z-index: 1051">
+        <div class="modal-content p-4">
           <div class="modal-header">
-            <h5 class="modal-title" id="suggestionsModalLabel">Suggested Recipes</h5>
+            <h5 class="modal-title h3" id="suggestionsModalLabel">Suggested Recipes</h5>
             <button type="button" class="btn-close" @click="closeSuggestionsModal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -438,8 +447,12 @@ onActivated(fetchFoldersAndBookmarks);
                 <div class="card h-100" @click="openRecipeModal(recipe)">
                   <img :src="getImageUrl(recipe)" class="card-img-top" @error="handleImageError(recipe.RecipeId)" />
                   <div class="card-body">
-                    <h5 class="card-title fw-bold">{{ recipe.Name }}</h5>
-                    <p class="card-text text-muted">{{ recipe.Description || 'No description' }}</p>
+                    <h5 class="card-title fw-bold text-truncate">
+                      {{ recipe.Name || 'Name not loaded' }}
+                    </h5>
+                    <p class="card-text text-muted text-truncate">
+                      {{ recipe.Description || 'No description' }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -448,14 +461,14 @@ onActivated(fetchFoldersAndBookmarks);
         </div>
       </div>
     </div>
-    <div class="modal-backdrop fade show" style="z-index: 1049;" @click="closeSuggestionsModal"></div>
+    <div class="modal-backdrop fade show" style="z-index: 1049" @click="closeSuggestionsModal"></div>
   </Teleport>
 
   <!-- Recipe Details Modal -->
   <Teleport to="body" v-if="showRecipeModal">
     <div class="modal fade show" id="recipeModal" tabindex="-1" aria-labelledby="recipeModalLabel"
-      style="display: block; z-index: 1050;">
-      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="z-index: 1051;">
+      style="display: block; z-index: 1050">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="z-index: 1051">
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="btn-close" @click="closeRecipeModal" aria-label="Close"></button>
@@ -466,7 +479,7 @@ onActivated(fetchFoldersAndBookmarks);
         </div>
       </div>
     </div>
-    <div class="modal-backdrop fade show" style="z-index: 1049;" @click="closeRecipeModal"></div>
+    <div class="modal-backdrop fade show" style="z-index: 1049" @click="closeRecipeModal"></div>
   </Teleport>
 </template>
 
