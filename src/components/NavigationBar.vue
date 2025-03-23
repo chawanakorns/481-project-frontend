@@ -3,11 +3,13 @@ import { Icon } from '@iconify/vue'
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+  <nav class="navbar navbar-expand-lg fixed-top shadow-sm"
+    style="background: linear-gradient(135deg, #ffffff, #f8f9fa);">
     <div class="container-fluid px-4">
       <!-- Brand/logo area -->
-      <a class="navbar-brand fw-bold" href="/home">
-        <Icon icon="mdi:food-fork-drink" width="32px" height="32px" class="me-1" /> DishCover
+      <a class="navbar-brand fw-bold d-flex align-items-center" href="/home">
+        <Icon icon="mdi:food-fork-drink" width="32" height="32" class="me-2" />
+        <span class="text-gradient">DishCover</span>
       </a>
 
       <!-- Toggle button for mobile -->
@@ -21,13 +23,13 @@ import { Icon } from '@iconify/vue'
         <ul class="navbar-nav me-auto mb-2 mb-lg-0"></ul>
 
         <!-- Right-side actions -->
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center gap-3">
           <a class="nav-link d-flex align-items-center" href="/bookmarks">
-            <Icon icon="mdi:bookmark-outline" width="32" height="32" />
+            <Icon icon="mdi:bookmark-outline" width="24" height="24" />
           </a>
-          <button class="btn btn-primary">
+          <button class="btn btn-danger btn-sm fw-bold">
             <a class="nav-link text-white d-flex align-items-center" href="/logout">
-              <Icon icon="mdi:logout" /> Log out
+              <Icon icon="mdi:logout" class="me-1" /> Log out
             </a>
           </button>
         </div>
@@ -38,7 +40,7 @@ import { Icon } from '@iconify/vue'
 
 <style scoped>
 .navbar {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
   z-index: 100;
   transition: all 0.3s ease;
 }
@@ -46,13 +48,11 @@ import { Icon } from '@iconify/vue'
 .navbar-brand {
   font-size: 1.5rem;
   color: #eb5216;
-  /* Set the color to #eb5216 */
   transition: color 0.2s ease;
 }
 
 .navbar-brand:hover {
   color: #a7431c !important;
-  /* Keep the hover color as is */
 }
 
 .nav-link {
@@ -67,61 +67,19 @@ import { Icon } from '@iconify/vue'
   color: #a7431c;
 }
 
-.nav-link .iconify,
-.navbar-brand .iconify {
-  font-size: 1.2rem;
-}
-
-.btn {
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-}
-
-.btn-primary {
-  background: linear-gradient(45deg, #eb5216, #a7431c);
+.btn-danger {
+  background-color: #dc3545;
   border: none;
-  margin-left: 16px;
+  transition: background-color 0.3s ease;
 }
 
-.btn-primary:hover {
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.text-gradient {
   background: linear-gradient(45deg, #eb5216, #a7431c);
-}
-
-.btn-outline-primary {
-  border-width: 2px;
-}
-
-.btn-outline-primary:hover {
-  background-color: rgba(13, 110, 253, 0.1);
-}
-
-@media (max-width: 991px) {
-  .navbar-collapse {
-    padding: 1rem;
-    background-color: #fff;
-    border-radius: 0.5rem;
-    margin-top: 0.5rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-
-  .nav-link {
-    padding: 0.75rem 1rem;
-  }
-
-  .btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-
-  .d-flex.align-items-center.gap-3 {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-  }
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 </style>
