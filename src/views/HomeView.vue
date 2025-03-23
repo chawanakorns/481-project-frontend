@@ -186,11 +186,13 @@ onMounted(async () => {
           </div>
           <div v-else v-for="(recipe, index) in shuffledHeroRecipes" :key="recipe.RecipeId"
             :class="['carousel-item', { 'active': index === 0 }]">
-            <img :src="getImageUrl(recipe)" class="d-block w-100 hero-image" @error="handleImageError(recipe.RecipeId)"
-              :alt="recipe.Name">
-            <div class="carousel-caption d-none d-md-block">
-              <h5>{{ recipe.Name }}</h5>
-              <p>{{ recipe.Description?.substring(0, 110) + '...' }}</p>
+            <div class="hero-card" @click="openModal(recipe)">
+              <img :src="getImageUrl(recipe)" class="d-block w-100 hero-image"
+                @error="handleImageError(recipe.RecipeId)" :alt="recipe.Name">
+              <div class="carousel-caption d-none d-md-block">
+                <h5>{{ recipe.Name }}</h5>
+                <p>{{ recipe.Description?.substring(0, 110) + '...' }}</p>
+              </div>
             </div>
           </div>
         </div>
